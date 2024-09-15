@@ -9,6 +9,8 @@ Ci-dessous la spécification de l'API de communication entre différentes tâche
 	1. [Broker](#broker)
 	2. [Channel](#channel)
 	3. [Task](#task)
+3. [Exemple d'utilisation](#exemple-dutilisation)
+
 
 ## Idée générale
 
@@ -89,3 +91,42 @@ La tâche peut se connecter à un serveur distant via le broker associé, dans c
 Constructeur de la classe `Task`. Le paramètre `b` est le broker associé à la tâche et `r` est le runnable associé à la tâche. Un broker peut être associé à plusieurs tâches, mais une tâche ne peut être associée qu'à un seul broker.
 - **static Broker getBroker()**
 Méthode permettant de récupérer le `broker` associé à la tâche.
+
+## Exemple d'utilisation
+
+La classe suivante se situe dans le package `test` et est nommée `example` :
+
+```java
+public class example
+```
+
+Cette classe met en place un test simple de communication entre deux tâches via un broker et des canaux. 
+- Un brokers est créé : `broker1`.
+- Task 1 (associée à `broker1`) attend une connexion sur le port 8080 et lit les données reçues via un canal.
+-  Task 2 (associée à `broker1`) se connecte à `broker1` via le port 8080, envoie un message, puis se déconnecte.
+- Les deux tâches sont exécutées simultanément et une fois la communication terminée, un message indique la fin.
+ 
+Ce test illustre l'utilisation de l'API pour établir une communication bidirectionnelle entre tâches.
+
+```mermaid
+sequenceDiagram
+    participant Task1 as Task 1
+    participant Broker1 as Broker 1
+    participant Channel as Channel (8080)
+    participant Task2 as Task 2
+
+    Task1->>Broker1: accept connection on port 8080
+    Broker1->>Channel: create channel
+    Task2->>Broker1: connect to Broker 1 on port 8080
+    Broker1->>Channel: open channel for Task 2
+    Task2->>Channel: send message "Hello from Task 2"
+    Channel->>Task1: receive message
+    Task1->>Channel: disconnect
+    Task2->>Channel: disconnect
+    Task1->>Task1: finish execution
+    Task2->>Task2: finish execution
+    Task1->>Console: print "Task 1 received: Hello from Task 2"
+    Console->>Console: print "Communication complete."
+```
+
+![Image diagramme mermaid](diagrammeMermaid.png)
