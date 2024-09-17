@@ -44,6 +44,92 @@ public class example {
 
 	public static void main(String[] args) {
        
+       
+    }
+
+
+    public boolean test1(){ 
+        BrokerImplem broker1 = new BrokerImplem("Broker1");
+       
+        TaskImplem task1 = new TaskImplem(broker1, new Runnable() {
+            @Override
+            public void run() {
+                ChannelImplem channel = (ChannelImplem) broker1.accept(8080);
+
+                int messageSize = readMessageSize(channel);
+                
+                byte[] buffer = new byte[messageSize];
+                int bytesRead = 0;
+                int bytesWritten = 0;
+
+                while (bytesRead < messageSize) {
+                    int response = channel.read(buffer, bytesRead, messageSize - bytesRead);
+                    
+                    if (response == -1) {
+                        System.out.println("Error reading message");
+                        channel.disconnect();
+                        return;
+                    }
+
+                    bytesRead += response;
+                }
+
+                while (bytesWritten < messageSize) {
+                    int written = channel.write(buffer, bytesWritten, messageSize - bytesWritten);
+                    
+                    if (written == -1) {
+                        System.out.println("Error writing message");
+                        channel.disconnect();
+                        return;
+                    }
+
+                    bytesWritten += written;
+                }
+
+                channel.disconnect();
+            }
+        });
+
+        TaskImplem task2 = new TaskImplem(broker1, new Runnable() {
+            @Override
+            public void run() { // Implique que le constructeur de TaskImplem démare le thread
+                ChannelImplem Channel = (ChannelImplem) broker1.connect("Broker1", 8080);
+                String message = "Hello from Task 2";
+
+                byte[] sizeBytes = getMessageSize(message.length());
+                byte[] messageBytes = message.getBytes();
+
+                byte[] buffer = new byte[sizeBytes.length + messageBytes.length];
+                System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
+                System.arraycopy(messageBytes, 0, buffer, sizeBytes.length, messageBytes.length);
+
+                int bytesWritten = 0;
+                while (bytesWritten < buffer.length) {
+                    int response = Channel.write(buffer, bytesWritten, buffer.length - bytesWritten);
+                    if (response == -1) {
+                        System.out.println("Error writing message");
+                        return;
+                    }
+                    bytesWritten += response;
+                }
+
+                Channel.disconnect();
+            }
+        });
+
+        try {
+            task1.join();  
+            task2.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        System.out.println("Communication complete.");
+        return true;
+    }
+
+    public boolean test2(){
         BrokerImplem broker1 = new BrokerImplem("Broker1");
        
         TaskImplem task1 = new TaskImplem(broker1, new Runnable() {
@@ -75,7 +161,6 @@ public class example {
 
                 byte[] sizeBytes = getMessageSize(message.length());
                 byte[] messageBytes = message.getBytes();
-                // Fuse the size and the message into a single byte array
                 byte[] buffer = new byte[sizeBytes.length + messageBytes.length];
                 System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
                 System.arraycopy(messageBytes, 0, buffer, sizeBytes.length, messageBytes.length);
@@ -99,9 +184,11 @@ public class example {
             task2.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return false;
         }
 
         System.out.println("Communication complete.");
+        return true;
     }
 
 }
