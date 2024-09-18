@@ -27,7 +27,7 @@ public class example {
         return (sizeBytes[0] << 24) | (sizeBytes[1] << 16) | (sizeBytes[2] << 8) | sizeBytes[3];
     }
 
-    public static int readMessageSize(ChannelImplem channel) {
+    public static int readMessageSize(Channel channel) {
         byte[] sizeBytes = new byte[4];
         // We need to use a While loop to make sure we read all 4 bytes
         int bytesRead = 0;
@@ -49,12 +49,12 @@ public class example {
 
 
     public boolean test1(){ 
-        BrokerImplem broker1 = new BrokerImplem("Broker1");
+        Broker broker1 = new Broker("Broker1");
        
-        TaskImplem task1 = new TaskImplem(broker1, new Runnable() {
+        Task task1 = new Task(broker1, new Runnable() {
             @Override
             public void run() {
-                ChannelImplem channel = (ChannelImplem) broker1.accept(8080);
+                Channel channel = (Channel) broker1.accept(8080);
 
                 int messageSize = readMessageSize(channel);
                 
@@ -92,10 +92,10 @@ public class example {
             
         });
 
-        TaskImplem task2 = new TaskImplem(broker1, new Runnable() {
+        Task task2 = new Task(broker1, new Runnable() {
             @Override
             public void run() { // Implique que le constructeur de TaskImplem démare le thread
-                ChannelImplem Channel = (ChannelImplem) broker1.connect("Broker1", 8080);
+                Channel Channel = (Channel) broker1.connect("Broker1", 8080);
                 String message = "Hello from Task 2";
 
                 byte[] sizeBytes = getMessageSize(message.length());
@@ -132,12 +132,12 @@ public class example {
     }
 
     public boolean test2(){
-        BrokerImplem broker1 = new BrokerImplem("Broker1");
+        Broker broker1 = new Broker("Broker1");
        
-        TaskImplem task1 = new TaskImplem(broker1, new Runnable() {
+        Task task1 = new Task(broker1, new Runnable() {
             @Override
             public void run() { // Implique que le constructeur de TaskImplem démare le thread
-                ChannelImplem Channel = (ChannelImplem) broker1.accept(8080); 
+                Channel Channel = (Channel) broker1.accept(8080); 
                 int messageSize = readMessageSize(Channel);
                 
                 byte[] buffer = new byte[messageSize];
@@ -155,10 +155,10 @@ public class example {
             }
         });
 
-        TaskImplem task2 = new TaskImplem(broker1, new Runnable() {
+        Task task2 = new Task(broker1, new Runnable() {
             @Override
             public void run() { // Implique que le constructeur de TaskImplem démare le thread
-                ChannelImplem Channel = (ChannelImplem) broker1.connect("Broker1", 8080);
+                Channel Channel = (Channel) broker1.connect("Broker1", 8080);
                 String message = "Hello from Task 2";
 
                 byte[] sizeBytes = getMessageSize(message.length());

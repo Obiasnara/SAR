@@ -1,8 +1,8 @@
 package implems;
 
-import abstracts.Channel;
+import abstracts.ChannelAbstract;
 
-public class ChannelImplem extends Channel {
+public class Channel extends ChannelAbstract {
 
 	@Override
 	public int read(byte[] bytes, int offset, int length) {
