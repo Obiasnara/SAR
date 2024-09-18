@@ -88,6 +88,8 @@ public class example {
 
                 channel.disconnect();
             }
+
+            
         });
 
         TaskImplem task2 = new TaskImplem(broker1, new Runnable() {
@@ -98,7 +100,7 @@ public class example {
 
                 byte[] sizeBytes = getMessageSize(message.length());
                 byte[] messageBytes = message.getBytes();
-
+                // Fuse the size and the message into a single byte array
                 byte[] buffer = new byte[sizeBytes.length + messageBytes.length];
                 System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
                 System.arraycopy(messageBytes, 0, buffer, sizeBytes.length, messageBytes.length);
@@ -161,6 +163,7 @@ public class example {
 
                 byte[] sizeBytes = getMessageSize(message.length());
                 byte[] messageBytes = message.getBytes();
+                // Fuse the size and the message into a single byte array
                 byte[] buffer = new byte[sizeBytes.length + messageBytes.length];
                 System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
                 System.arraycopy(messageBytes, 0, buffer, sizeBytes.length, messageBytes.length);
