@@ -5,12 +5,18 @@ import abstracts.TaskAbstract;
 
 public class Task extends TaskAbstract {
 
+	// Task has a UUID, a broker and a runnable
+	private String uuid;
 	private BrokerAbstract broker;
 	private Runnable runnable;
+	private Thread thread;
 
 	public Task(BrokerAbstract b, Runnable r) {
 		this.broker = b;
 		this.runnable = r;
-		this.runnable.run();
+		this.uuid = java.util.UUID.randomUUID().toString();
+		this.thread = new Thread(this.runnable, uuid);
+		this.thread.start();
 	}
+
 }
