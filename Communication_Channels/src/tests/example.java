@@ -63,12 +63,50 @@ public class example {
         return getSizeFromMessage(sizeBytes);
     }
 
+    public static byte[] readSizeAndMessage(Channel channel) {
+        int messageSize = readMessageSize(channel);
+        if (messageSize <= 0) {
+            return null;
+        }
+
+        byte[] buffer = new byte[messageSize];
+        int bytesRead = 0;
+
+        while (bytesRead < messageSize) {
+            int response = channel.read(buffer, bytesRead, messageSize - bytesRead);
+
+            if (response == -1) {
+                return null;
+            }
+
+            bytesRead += response;
+        }
+
+        return buffer;
+    }
+
+    public static void writeSizeAndMessage(Channel channel, byte[] message) {
+        byte[] sizeBytes = getMessageSize(message.length);
+        byte[] buffer = new byte[sizeBytes.length + message.length];
+        System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
+        System.arraycopy(message, 0, buffer, sizeBytes.length, message.length);
+
+        int bytesWritten = 0;
+        while (bytesWritten < buffer.length) {
+            int response = channel.write(buffer, bytesWritten, buffer.length - bytesWritten);
+            if (response == -1) {
+                return;
+            }
+            bytesWritten += response;
+        }
+    }
+
     public static void main(String[] args) {
         // Create a new test object
         example test = new example();
         // Run the test
-        test.test1();
-        // test.test2();
+        System.out.println("Test 1 same broker : " + test.test1());
+        System.out.println("Test 2 different broker : " + test.test2());
     }
 
     public boolean test1() {
@@ -81,61 +119,18 @@ public class example {
                     // Listen on port 8080 for incoming connections
                     Channel serverChannel = (Channel) broker.accept(8080);
 
-                    while (true) {
-                        // Read the message size
-                        int messageSize = readMessageSize(serverChannel);
+                    int nbMessages = 0;
 
-                        if (messageSize <= 0) {
-                            System.out.println("Error: Invalid message size");
-                            continue;
-                        }
+                    while (nbMessages < 10) {
+                        // Read message
+                        byte[] buffer = readSizeAndMessage(serverChannel);
 
-                        System.out.println("Received message size: " + messageSize);
-
-                        byte[] buffer = new byte[messageSize];
-                        int bytesRead = 0;
-
-                        // Read the message from the channel
-                        while (bytesRead < messageSize) {
-                            int response = serverChannel.read(buffer, bytesRead, messageSize - bytesRead);
-
-                            if (response == -1) {
-                                System.out.println("Error reading message");
-                                serverChannel.disconnect();
-                                return;
-                            }
-
-                            bytesRead += response;
-                        }
-
-                        System.out.println("Received message: " + new String(buffer, 0, bytesRead));
-
-                        byte[] sizeBytes = getMessageSize(buffer.length);
-                        byte[] messageBytes = buffer;
-
-                        // Combine size and message into a single byte array
-                        byte[] writeBuffer = new byte[sizeBytes.length + messageBytes.length];
-                        System.arraycopy(sizeBytes, 0, writeBuffer, 0, sizeBytes.length);
-                        System.arraycopy(messageBytes, 0, writeBuffer, sizeBytes.length, messageBytes.length);
 
                         // Echo the message back to the client
-                        int bytesWritten = 0;
-                        while (bytesWritten < writeBuffer.length) {
-                            int written = serverChannel.write(writeBuffer, bytesWritten,
-                                    writeBuffer.length - bytesWritten);
-
-                            if (written == -1) {
-                                System.out.println("Error writing message");
-                                serverChannel.disconnect();
-                                return;
-                            }
-                            System.out
-                                    .println("Server sent mid-echo: " + new String(writeBuffer, bytesWritten, written));
-                            bytesWritten += written;
-                        }
+                        writeSizeAndMessage(serverChannel, buffer);
 
 
-                        Thread.sleep(1000);
+                        nbMessages++;
                     }
 
                 } catch (Exception e) {
@@ -150,49 +145,26 @@ public class example {
                 try {
                     // Connect to the server on port 8080
                     Channel clientChannel = (Channel) broker.connect("Broker1", 8080);
-                    String message = "Hello from Echo Client";
+                    
 
-                    byte[] sizeBytes = getMessageSize(message.length());
-                    byte[] messageBytes = message.getBytes();
+                    int nbMessages = 0;
 
-                    // Combine size and message into a single byte array
-                    byte[] buffer = new byte[sizeBytes.length + messageBytes.length];
-                    System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
-                    System.arraycopy(messageBytes, 0, buffer, sizeBytes.length, messageBytes.length);
+                    while (nbMessages < 10) {
+                        String message = "Message " + nbMessages;
 
-                    // Send the message to the server
-                    int bytesWritten = 0;
-                    while (bytesWritten < buffer.length) {
-                        int response = clientChannel.write(buffer, bytesWritten, buffer.length - bytesWritten);
-                        if (response == -1) {
-                            System.out.println("Error writing message");
-                            return;
-                        }
-                        bytesWritten += response;
+                        writeSizeAndMessage(clientChannel, message.getBytes());
+
+
+                        // Read the message from the channel
+
+                        byte[] echoBuffer = readSizeAndMessage(clientChannel);
+
+                        assert echoBuffer != null;
+                        assert new String(echoBuffer, 0, echoBuffer.length).equals(message);
+                        assert echoBuffer.length == message.length();
+
+                        nbMessages++;
                     }
-
-                    // Read the message size
-                    int messageSize = readMessageSize(clientChannel);
-
-                    System.out.println("Client received message size: " + messageSize);
-
-                    byte[] echoBuffer = new byte[messageSize];
-                    int bytesRead = 0;
-
-                    // Read the message from the channel
-                    while (bytesRead < messageSize) {
-                        int response = clientChannel.read(echoBuffer, bytesRead, messageSize - bytesRead);
-
-                        if (response == -1) {
-                            System.out.println("Error reading message");
-                            clientChannel.disconnect();
-                            return;
-                        }
-                        bytesRead += response;
-                    }
-
-                    System.out.println("Client received echo: "
-                            + new String(echoBuffer, sizeBytes.length, bytesRead - sizeBytes.length));
 
                     clientChannel.disconnect();
 
@@ -214,6 +186,7 @@ public class example {
 
     public boolean test2() {
         Broker broker = new Broker("Broker1");
+        Broker broker2 = new Broker("Broker2");
 
         Task serverTask = new Task(broker, new Runnable() {
             @Override
@@ -222,59 +195,16 @@ public class example {
                     // Listen on port 8080 for incoming connections
                     Channel serverChannel = (Channel) broker.accept(8080);
 
-                    while (true) {
-                        // Read the message size
-                        int messageSize = readMessageSize(serverChannel);
+                    int nbMessages = 0;
 
-                        if (messageSize <= 0) {
-                            System.out.println("Error: Invalid message size");
-                            continue;
-                        }
-
-                        System.out.println("Received message size: " + messageSize);
-
-                        byte[] buffer = new byte[messageSize];
-                        int bytesRead = 0;
-
-                        // Read the message from the channel
-                        while (bytesRead < messageSize) {
-                            int response = serverChannel.read(buffer, bytesRead, messageSize - bytesRead);
-
-                            if (response == -1) {
-                                System.out.println("Error reading message");
-                                serverChannel.disconnect();
-                                return;
-                            }
-
-                            bytesRead += response;
-                        }
-
-                        System.out.println("Received message: " + new String(buffer, 0, bytesRead));
-
-                        byte[] sizeBytes = getMessageSize(buffer.length);
-                        byte[] messageBytes = buffer;
-
-                        // Combine size and message into a single byte array
-                        byte[] writeBuffer = new byte[sizeBytes.length + messageBytes.length];
-                        System.arraycopy(sizeBytes, 0, writeBuffer, 0, sizeBytes.length);
-                        System.arraycopy(messageBytes, 0, writeBuffer, sizeBytes.length, messageBytes.length);
+                    while (nbMessages < 10) {
+                        // Read message
+                        byte[] buffer = readSizeAndMessage(serverChannel);
 
                         // Echo the message back to the client
-                        int bytesWritten = 0;
-                        while (bytesWritten < messageSize) {
-                            int written = serverChannel.write(writeBuffer, bytesWritten, messageSize - bytesWritten);
+                        writeSizeAndMessage(serverChannel, buffer);
 
-                            if (written == -1) {
-                                System.out.println("Error writing message");
-                                serverChannel.disconnect();
-                                return;
-                            }
-
-                            bytesWritten += written;
-                        }
-
-                        System.out.println("Echoed message: " + new String(writeBuffer, 4, bytesRead));
-                        Thread.sleep(1000);
+                        nbMessages++;
                     }
 
                 } catch (Exception e) {
@@ -283,55 +213,31 @@ public class example {
             }
         });
 
-        Task clientTask = new Task(broker, new Runnable() {
+        Task clientTask = new Task(broker2, new Runnable() {
             @Override
             public void run() {
                 try {
                     // Connect to the server on port 8080
-                    Channel clientChannel = (Channel) broker.connect("Broker1", 8080);
-                    String message = LOREM_IPSUM;
+                    Channel clientChannel = (Channel) broker2.connect("Broker1", 8080);
+                    
 
-                    byte[] sizeBytes = getMessageSize(message.length());
-                    byte[] messageBytes = message.getBytes();
+                    int nbMessages = 0;
 
-                    // Combine size and message into a single byte array
-                    byte[] buffer = new byte[sizeBytes.length + messageBytes.length];
-                    System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
-                    System.arraycopy(messageBytes, 0, buffer, sizeBytes.length, messageBytes.length);
+                    while (nbMessages < 10) {
+                        String message = "Message " + nbMessages;
 
-                    // Send the message to the server
-                    int bytesWritten = 0;
-                    while (bytesWritten < buffer.length) {
-                        int response = clientChannel.write(buffer, bytesWritten, buffer.length - bytesWritten);
-                        if (response == -1) {
-                            System.out.println("Error writing message");
-                            return;
-                        }
-                        bytesWritten += response;
+                        writeSizeAndMessage(clientChannel, message.getBytes());
+
+                        // Read the message from the channel
+
+                        byte[] echoBuffer = readSizeAndMessage(clientChannel);
+
+                        assert echoBuffer != null;
+                        assert new String(echoBuffer, 0, echoBuffer.length).equals(message);
+                        assert echoBuffer.length == message.length();
+
+                        nbMessages++;
                     }
-
-                    // Read the message size
-                    int messageSize = readMessageSize(clientChannel);
-
-                    System.out.println("Client received message size: " + messageSize);
-
-                    byte[] echoBuffer = new byte[messageSize];
-                    int bytesRead = 0;
-
-                    // Read the message from the channel
-                    while (bytesRead < messageSize) {
-                        int response = clientChannel.read(echoBuffer, bytesRead, messageSize - bytesRead);
-
-                        if (response == -1) {
-                            System.out.println("Error reading message");
-                            clientChannel.disconnect();
-                            return;
-                        }
-
-                        bytesRead += response;
-                    }
-
-                    System.out.println("Client received echo: " + new String(echoBuffer, 4, bytesRead));
 
                     clientChannel.disconnect();
 
