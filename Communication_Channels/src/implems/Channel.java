@@ -1,51 +1,34 @@
 package implems;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import abstracts.ChannelAbstract;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Channel extends ChannelAbstract {
 
 	private boolean connected = true;
 
-    ConcurrentHashMap<String, CircularBuffer> writeBufferMap = new ConcurrentHashMap<>();
+    protected CircularBuffer buffIn;
+	protected CircularBuffer buffOut;
     ConcurrentHashMap<String, CircularBuffer> readBufferMap = new ConcurrentHashMap<>();
 
 	static final int BUFFER_SIZE = 10;
 
-	CircularBuffer bufferOne = new CircularBuffer(BUFFER_SIZE);
-	CircularBuffer bufferTwo = new CircularBuffer(BUFFER_SIZE);	
 
-	// Method to associate a task with read and write buffers
-    public void addBuffersForTask(Thread task) {
-		if (readBufferMap.isEmpty() && writeBufferMap.isEmpty()) {
-			readBufferMap.put(task.getName(), bufferOne);
-			writeBufferMap.put(task.getName(), bufferTwo);
-		} else {
-			readBufferMap.put(task.getName(), bufferTwo);
-			writeBufferMap.put(task.getName(), bufferOne);
-		}
-    }
+	public Channel(CircularBuffer buffIn,  CircularBuffer buffOut) {
+		this.buffIn = buffIn;
+		this.buffOut = buffOut;
+	}
 
-    private CircularBuffer getCorrectWriteBuffer() {
-        return writeBufferMap.get(Thread.currentThread().getName());  // Write buffer associated with this task
-    }
-
-    private CircularBuffer getCorrectReadBuffer() {
-        return readBufferMap.get(Thread.currentThread().getName());  // Read buffer associated with this task
-    }
 	
 	@Override
 	public int read(byte[] bytes, int offset, int length) {
-
-		CircularBuffer readBuff = getCorrectReadBuffer();
 
 		int bytesRead = 0;
 		while (bytesRead == 0) {
 			try {
 				for (int i = offset; i < offset + length; i++) {
-					if (!readBuff.empty()) {
-						bytes[i] = readBuff.pull();
+					if (!buffIn.empty()) {
+						bytes[i] = buffIn.pull();
 						bytesRead++;
 					} else {
 						break;
@@ -61,15 +44,13 @@ public class Channel extends ChannelAbstract {
 	@Override
 	public int write(byte[] bytes, int offset, int length) {
 
-		CircularBuffer writeBuff = getCorrectWriteBuffer();
-
 		int bytesWritten = 0;
 		while (bytesWritten == 0) {
 			
 				try {
 					for (int i = offset; i < offset + length; i++) {
-						if (!writeBuff.full()) {
-							writeBuff.push(bytes[i]);
+						if (!buffOut.full()) {
+							buffOut.push(bytes[i]);
 							bytesWritten++;
 						} else {
 							break;

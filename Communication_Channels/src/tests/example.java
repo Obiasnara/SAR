@@ -82,6 +82,10 @@ public class example {
             bytesRead += response;
         }
 
+        if (VERBOSE) {
+            System.out.println("Received message: " + new String(buffer, 0, buffer.length));
+        }
+
         return buffer;
     }
 
@@ -99,8 +103,13 @@ public class example {
             }
             bytesWritten += response;
         }
+
+        if (VERBOSE) {
+            System.out.println("Sent message: " + new String(message, 0, message.length));
+        }
     }
 
+    protected static Boolean VERBOSE = false;
     public static void main(String[] args) {
         // Create a new test object
         example test = new example();
@@ -118,7 +127,9 @@ public class example {
                 try {
                     // Listen on port 8080 for incoming connections
                     Channel serverChannel = (Channel) broker.accept(8080);
-
+                    if (serverChannel == null) {
+                        return;
+                    }
                     int nbMessages = 0;
 
                     while (nbMessages < 10) {

@@ -19,4 +19,7 @@ public class Task extends TaskAbstract {
 		this.thread.start();
 	}
 
+	public static BrokerAbstract getBroker() { 
+		return ((Task) Thread.currentThread()).broker;
+	}
 }

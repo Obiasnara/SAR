@@ -1,64 +1,81 @@
 package implems;
 
+import abstracts.BrokerAbstract;
+import abstracts.ChannelAbstract;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import abstracts.BrokerAbstract;
-import abstracts.ChannelAbstract;
-import abstracts.TaskAbstract;
-
 public class Broker extends BrokerAbstract {
 
 	private String name;
+	protected static final int BUFFER_SIZE = 10;
+	
+	private final Map<Integer, BlockingQueue<RDV>> requestList = new ConcurrentHashMap<Integer, BlockingQueue<RDV>>();
 
-	// List of accept requests (final because it should not be redefined)
-	private final Map<Integer, BlockingQueue<ChannelAbstract>> acceptRequests = new ConcurrentHashMap<Integer, BlockingQueue<ChannelAbstract>>();
-	BlockingQueue<ChannelAbstract> requestList = new LinkedBlockingQueue<>();
 
+	protected class RDV {
+		private CircularBuffer buffIn;
+		private CircularBuffer buffOut;
+		private RDV(CircularBuffer buffIn, CircularBuffer buffOut) {
+			this.buffIn = buffIn;
+			this.buffOut = buffOut;
+		}
+	}
 
 
 	public Broker(String name) {
 		this.name = name;
+		// Might want to force user to do that by his own not to leak 'this' reference
 		BrokerManager.getInstance().addBroker(this.name, this);
 	}
 
 	@Override
 	public ChannelAbstract accept(int port) {
-
-		try {
-			ChannelAbstract channel = requestList.take();
-			((Channel)channel).addBuffersForTask(Thread.currentThread());
-			return channel;
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			return null;
-		}
-		
+			BlockingQueue<RDV> rdvQueue;
+			synchronized (requestList) {  // Synchronize on the request list
+				while (!requestList.containsKey(port)) {
+					try {
+						requestList.wait();  // Wait on requestList until an entry is available
+					} catch (InterruptedException ex) {
+					}
+				}
+				rdvQueue = requestList.get(port);  // Fetch the RDV queue for the port
+			}
+			
+			try {
+				RDV rdv = rdvQueue.take();  // This will block until an RDV is available
+				return new Channel(rdv.buffOut, rdv.buffIn);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return null;
+			}
 	}
+
 
 	@Override
 	public ChannelAbstract connect(String name, int port) {
 		if (this.name.equals(name)) {
-			ChannelAbstract channel = new Channel();
-			
-			// Link task to channel
-			((Channel)channel).addBuffersForTask(Thread.currentThread());
+			CircularBuffer buffIn = new CircularBuffer(BUFFER_SIZE);
+			CircularBuffer buffOut = new CircularBuffer(BUFFER_SIZE);
+			ChannelAbstract channel = new Channel(buffIn, buffOut);
 
-			// Didn't know about this method seems to work for that scenario
-			requestList.add(channel);
+			RDV rdv = new RDV(buffIn, buffOut);
 
-			acceptRequests.put(port, requestList); 
-
+			synchronized (requestList) {
+				// I never used the computeIfAbsent method before, but it seems to be the right choice here
+				requestList.computeIfAbsent(port, p -> new LinkedBlockingQueue<>()).add(rdv);
+				requestList.notifyAll(); // Accept will wake up
+			}
 			return channel;
-		}		
-		// Here we have a local network (but could be a remote network, the same code would apply)
+		}
+
 		BrokerAbstract brokerFoundOnNetwork = BrokerManager.getInstance().getBroker(name);
-		
 		if (brokerFoundOnNetwork == null) {
 			return null;
 		}
 		return brokerFoundOnNetwork.connect(name, port);
 	}
+
 }

@@ -1,16 +1,14 @@
 package implems;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import abstracts.BrokerAbstract;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BrokerManager {
     // Singleton
     private static BrokerManager instance = null;
 
     // Map enabling the association of the broker name with the broker object
-    private Map<String, BrokerAbstract> brokers = new HashMap<String, BrokerAbstract>();
+    private ConcurrentHashMap<String, BrokerAbstract> brokers = new ConcurrentHashMap<String, BrokerAbstract>();
 
     private BrokerManager() {
     }
