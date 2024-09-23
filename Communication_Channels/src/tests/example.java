@@ -109,13 +109,13 @@ public class example {
         }
     }
 
-    protected static Boolean VERBOSE = false;
+    protected static Boolean VERBOSE = true;
     public static void main(String[] args) {
         // Create a new test object
         example test = new example();
         // Run the test
-        System.out.println("Test 1 same broker : " + test.test1());
-        System.out.println("Test 2 different broker : " + test.test2());
+        test.test1();
+        test.test2();
     }
 
     public boolean test1() {

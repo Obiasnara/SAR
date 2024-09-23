@@ -24,18 +24,17 @@ public class Channel extends ChannelAbstract {
 	public int read(byte[] bytes, int offset, int length) {
 
 		int bytesRead = 0;
-		while (bytesRead == 0) {
-			try {
-				for (int i = offset; i < offset + length; i++) {
-					if (!buffIn.empty()) {
-						bytes[i] = buffIn.pull();
-						bytesRead++;
-					} else {
-						break;
-					}
+		while (bytesRead < length) {
+			if (!buffIn.empty()) {
+				try {
+					bytes[offset + bytesRead] = buffIn.pull();
+				} catch (IllegalStateException e) {
+					System.err.println("Error: " + e.getMessage());
+					break;
 				}
-			} catch (IllegalStateException e) { // bufferOne is empty
-				System.out.println("This state is Illegal, tried to read from an empty buffer");
+				bytesRead++;
+			} else {
+				break;
 			}
 		}
 		return bytesRead;
@@ -43,22 +42,22 @@ public class Channel extends ChannelAbstract {
 
 	@Override
 	public int write(byte[] bytes, int offset, int length) {
-
+		if (disconnected()) {
+			return length;
+		}
 		int bytesWritten = 0;
-		while (bytesWritten == 0) {
-			
+		while (bytesWritten < length) {	
+			if (!buffOut.full()) {
 				try {
-					for (int i = offset; i < offset + length; i++) {
-						if (!buffOut.full()) {
-							buffOut.push(bytes[i]);
-							bytesWritten++;
-						} else {
-							break;
-						}
-					}
-				} catch (IllegalStateException e) { // bufferTwo is full
-					System.out.println("This state is Illegal, tried to write on a full buffer");
+					buffOut.push(bytes[offset + bytesWritten]);
+				} catch (IllegalStateException e) {
+					System.err.println("Error: " + e.getMessage());
+					break;
 				}
+				bytesWritten++;
+			} else {
+			break;
+			}
 		}
 		return bytesWritten;
 	}
