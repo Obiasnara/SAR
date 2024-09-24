@@ -99,8 +99,7 @@ Note: of course, both ends may call the method "disconnect" concurrently and the
 Note: since we have not asserted a strict ownership model between tasks and channels, it is possible that a channel be disconnected
 while some operations are pending locally. These operations must be interrupted, when appropriate, throwing a disconnected exception.
 
-The local rule is simple, once the method "disconnect" has been called on a channel, it is illegal to invoke the methods "read" or "write". Only the method "disconnected" may be called to check the status of the channel. In other words, if the method "disconnected" returns true, the methods "read" and "write" must not be invoked. If they are invoked nevertheless, the invocation will result in an disconnected
-exception being thrown.
+The local rule is simple, once the method "disconnect" has been called on a channel, it is illegal to invoke the methods "read" or "write". Only the method "disconnected" may be called to check the status of the channel. In other words, if the method "disconnected" returns true, the methods "read" and "write" must not be invoked. If they are invoked nevertheless, the invocation will result in an disconnected exception being thrown.
 
 The remote rule is more complex to grasp, that is, when the remote side disconnects a channel, how should that be perceived locally?
 
