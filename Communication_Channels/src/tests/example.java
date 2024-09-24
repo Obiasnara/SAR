@@ -1,6 +1,7 @@
 package tests;
 
 import implems.*;
+import java.util.ArrayList;
 
 /**
  * Cette classe met en place un test simple de communication entre deux tâches
@@ -114,11 +115,64 @@ public class example {
         // Create a new test object
         example test = new example();
         // Run the test
-        test.test1();
-        test.test2();
+        //test.test1();
+        //test.test2();
+        //test.test3();
+
+        test.test4();
     }
 
-    public boolean test1() {
+    protected class EchoServer implements Runnable {
+        protected Broker broker;
+        protected boolean isAccept;
+        protected String brokerName;
+        protected int port;
+
+        public EchoServer(Broker broker, boolean isAccept, String brokerName, int port) {
+            this.broker = broker;
+            this.isAccept = isAccept;
+            this.brokerName = brokerName;
+            this.port = port;
+        }
+        @Override
+        public void run() {
+            try {
+                Channel serverChannel;
+                int nbMessages = 0;
+                if (isAccept) {
+                    serverChannel = (Channel) broker.accept(this.port);
+                
+                    while (nbMessages < 10) {
+                        byte[] buffer = readSizeAndMessage(serverChannel);
+    
+                        writeSizeAndMessage(serverChannel, buffer);
+    
+                        nbMessages++;
+                    }
+
+                } else {
+                    serverChannel = (Channel) broker.connect(this.brokerName, this.port);
+
+                    while (nbMessages < 10) {
+
+                        String message = "Broker " + brokerName + " message number " + nbMessages;
+                        writeSizeAndMessage(serverChannel, message.getBytes());
+
+                        readSizeAndMessage(serverChannel);
+    
+                        nbMessages++;
+                    }
+                }
+                
+                serverChannel.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        
+    }
+
+    public void test1() {
         Broker broker = new Broker("Broker1");
 
         Task serverTask = new Task(broker, new Runnable() {
@@ -143,7 +197,7 @@ public class example {
 
                         nbMessages++;
                     }
-
+                    serverChannel.disconnect();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -189,13 +243,10 @@ public class example {
             clientTask.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return false;
         }
-
-        return true;
     }
 
-    public boolean test2() {
+    public void test2() {
         Broker broker = new Broker("Broker1");
         Broker broker2 = new Broker("Broker2");
 
@@ -262,10 +313,109 @@ public class example {
             clientTask.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return false;
         }
-
-        return true;
     }
 
+    public void test3() {
+        ArrayList<Broker> brokers = new ArrayList<Broker>();
+        ArrayList<Task> tasks = new ArrayList<Task>();
+
+        for (int i = 0; i < 10; i++) {
+            Broker broker = new Broker("Broker" + i);
+            brokers.add(broker);
+            Task serverTask = new Task(broker, new EchoServer(broker, true, "Broker" + i, i));
+            Task clientTask = new Task(broker, new EchoServer(broker, false, "Broker" + i, i));
+            tasks.add(serverTask);
+            tasks.add(clientTask);
+        }
+
+        for (Task task : tasks) {
+            try {
+                task.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void test4() {
+        Broker broker = new Broker("Broker1");
+
+        Task serverTask = new Task(broker, new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Listen on port 8080 for incoming connections
+                    Channel serverChannel = (Channel) broker.accept(8080);
+
+                    int nbMessages = 0;
+                    try {
+                        while (nbMessages < 10) {
+                            // Read message
+                            byte[] buffer = readSizeAndMessage(serverChannel);
+
+                            // Echo the message back to the client
+                            writeSizeAndMessage(serverChannel, buffer);
+
+                            if (nbMessages == 5) {
+                                serverChannel.disconnect();
+                            }
+
+                            nbMessages++;
+                        }  
+                    } catch (IllegalStateException e) {
+                        if (VERBOSE) {
+                            System.out.println("Server disconnected");
+                        }
+                        if(nbMessages != 6) {
+                            throw e;
+                        }
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Task clientTask = new Task(broker, new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Connect to the server on port 8080
+                    Channel clientChannel = (Channel) broker.connect("Broker1", 8080);
+                    
+
+                    int nbMessages = 0;
+
+                    while (nbMessages < 6) {
+                        String message = "Message " + nbMessages;
+
+                        writeSizeAndMessage(clientChannel, message.getBytes());
+
+                        // Read the message from the channel
+
+                        byte[] echoBuffer = readSizeAndMessage(clientChannel);
+
+                        assert echoBuffer != null;
+                        assert new String(echoBuffer, 0, echoBuffer.length).equals(message);
+                        assert echoBuffer.length == message.length();
+
+                        nbMessages++;
+                    }
+
+                    clientChannel.disconnect();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        try {
+            serverTask.join();
+            clientTask.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

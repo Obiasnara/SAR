@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Broker extends BrokerAbstract {
 
@@ -22,7 +24,7 @@ public class Broker extends BrokerAbstract {
 	protected class RDV {
 		private CircularBuffer buffIn;
 		private CircularBuffer buffOut;
-
+		private AtomicBoolean disconnected = new AtomicBoolean(false);
 		private CountDownLatch latch = new CountDownLatch(2);
 
 		private RDV() {
@@ -39,7 +41,7 @@ public class Broker extends BrokerAbstract {
 				Thread.currentThread().interrupt();
 			}
 
-			return new Channel(buffOut, buffIn);
+			return new Channel(buffOut, buffIn, disconnected);
 		}
 
 		protected ChannelAbstract connect() {
@@ -51,7 +53,7 @@ public class Broker extends BrokerAbstract {
 				Thread.currentThread().interrupt();
 			}
 
-			return new Channel(buffIn, buffOut);
+			return new Channel(buffIn, buffOut, disconnected);
 		}
 	}
 
@@ -64,37 +66,33 @@ public class Broker extends BrokerAbstract {
 
 	@Override
 	public ChannelAbstract accept(int port) {
-		
-			LinkedBlockingQueue<RDV> queue = requestList.get(port);
-			if (queue == null) {
-				queue = requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<RDV>());
-			}
-			RDV rdv = queue.poll();
-			if (rdv == null) {
-				rdv = new RDV();
-				queue.add(rdv);
-			}
+		requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<>());
+		LinkedBlockingQueue<RDV> queue = requestList.get(port);
 
-			return rdv.accept();
+		RDV rdv = new RDV();  
+		queue.add(rdv);     
+		return rdv.accept(); 
 	}
 
 
 	@Override
 	public ChannelAbstract connect(String name, int port) {
 		if (this.name.equals(name)) {
+			requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<>());
 			LinkedBlockingQueue<RDV> queue = requestList.get(port);
-			if (queue == null) {
-				queue = requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<RDV>());
-			}
-			RDV rdv = queue.poll();
-			if (rdv == null) {
-				rdv = new RDV();
-				queue.add(rdv);
+
+			RDV rdv = null;
+			try {
+				// Wait until an RDV is available
+				rdv = queue.take();  // This will block until there is an RDV
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();  // Handle the interruption properly
 			}
 
-			return rdv.connect();
+			return rdv.connect();  // Return the channel after connect
 		}
 
+		// External broker logic (unchanged)
 		BrokerAbstract brokerFoundOnNetwork = BrokerManager.getInstance().getBroker(name);
 		if (brokerFoundOnNetwork == null) {
 			return null;

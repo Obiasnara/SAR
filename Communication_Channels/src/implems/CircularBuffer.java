@@ -1,70 +1,57 @@
 package implems;
-
-/*
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Copyright: 2017
- *      Author: Pr. Olivier Gruber <olivier dot gruber at acm dot org>
+/**
+ * This circular buffer of bytes can be used to pass bytes between two threads:
+ * one thread pushing bytes in the buffer and the other pulling bytes from the
+ * buffer. The buffer policy is FIFO: first byte in is the first byte out.
  */
+public class CircularBuffer {
+    volatile int m_tail, m_head;
+    volatile byte m_bytes[];
 
-class CircularBuffer {
+    public CircularBuffer(int capacity) {
+        m_bytes = new byte[capacity];
+        m_tail = m_head = 0;
+    }
 
-	int m_capacity;
-	int m_start, m_end;
-	byte m_elements[];
+    /**
+     * @return true if this buffer is full, false otherwise
+     */
+    public boolean full() {
+        int next = (m_head + 1) % m_bytes.length;
+        return (next == m_tail);
+    }
 
-	public CircularBuffer(int capacity) {
-		m_capacity = capacity;
-		m_elements = new byte[capacity];
-		m_start = m_end = 0;
-	}
+    /**
+     * @return true if this buffer is empty, false otherwise
+     */
+    public boolean empty() {
+        return (m_tail == m_head);
+    }
 
-	public boolean full() {
-		int next = (m_end + 1) % m_capacity;
-		return (next == m_start);
-	}
+    /**
+     * @param b: the byte to push in the buffer
+     * @return the next available byte
+     * @throws an IllegalStateException if full.
+     */
+    public void push(byte b) {
+        int next = (m_head + 1) % m_bytes.length;
+        if (next == m_tail)
+            throw new IllegalStateException();
+        m_bytes[m_head] = b;
+        m_head = next;
+    }
 
-	public boolean empty() {
-		return (m_start == m_end);
-	}
-
-	/**
-	 * Pushes a byte in the buffer, if the buffer is not full,
-	 * throws an IllegalStateException otherwise.
-	 *
-	 * @return true if the push succeeded.
-	 */
-	public void push(byte elem) {
-		int next = (m_end + 1) % m_capacity;
-		if (next == m_start)
-			throw new IllegalStateException("Full");
-		m_elements[m_end] = elem;
-		m_end = next;
-	}
-
-	/**
-	 * @return the next available byte, if the buffer is not empty,
-	 *         throws an IllegalStateException otherwise. 
-	 */
-	public byte pull() {
-		if (m_start != m_end) {
-			int next = (m_start + 1) % m_capacity;
-			byte elem = m_elements[m_start];
-			m_start = next;
-			return elem;
-		}
-		throw new IllegalStateException("Empty");
-	}
+    /**
+     * @return the next available byte
+     * @throws an IllegalStateException if empty.
+     */
+    public byte pull() {
+        if (m_tail == m_head)
+            throw new IllegalStateException();
+        int next = (m_tail + 1) % m_bytes.length;
+        byte bits = m_bytes[m_tail];
+        m_tail = next;
+        return bits;
+    }
 
 }
