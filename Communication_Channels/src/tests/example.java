@@ -115,11 +115,11 @@ public class example {
         // Create a new test object
         example test = new example();
         // Run the test
-        //test.test1();
+        test.test1();
         //test.test2();
         //test.test3();
 
-        test.test4();
+        //test.test4();
     }
 
     protected class EchoServer implements Runnable {
@@ -320,7 +320,7 @@ public class example {
         ArrayList<Broker> brokers = new ArrayList<Broker>();
         ArrayList<Task> tasks = new ArrayList<Task>();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100000; i++) {
             Broker broker = new Broker("Broker" + i);
             brokers.add(broker);
             Task serverTask = new Task(broker, new EchoServer(broker, true, "Broker" + i, i));
