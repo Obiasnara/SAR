@@ -31,23 +31,41 @@ public class Channel extends ChannelAbstract {
 		}
 
 		int bytesRead = 0;
-		while (bytesRead < length) {
-			if (!buffIn.empty()) {
-				try {
-					bytes[offset + bytesRead] = buffIn.pull();
-				} catch (IllegalStateException e) {
-					System.err.println("Error: " + e.getMessage());
-					break;
+		try {
+			while (bytesRead == 0) {
+				if (buffIn.empty()) {
+					synchronized (buffIn) {
+						while (buffIn.empty()){
+							if (localDisconnected || remoteDisconnected.get()) {
+								throw new IllegalStateException("Channel is disconnected, cannot read.");
+							}
+							try {
+								buffIn.wait();
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+						}
+					}
 				}
-				bytesRead++;
-			} else {
-				break; // No more bytes in transit
+			
+				while( bytesRead < length && !buffIn.empty()) {
+						bytes[offset + bytesRead] = buffIn.pull();
+						bytesRead++;
+				} 
+				if (bytesRead > 0) {
+					synchronized (buffIn) {
+						buffIn.notify();
+					}
+				}
 			}
-		}
-
-		// If buffer is empty, consider remote side disconnected
-		if (buffIn.empty() && remoteDisconnected.get()) {
-			localDisconnected = true;
+		} catch (IllegalStateException e) {
+			if(!localDisconnected) {
+				localDisconnected = true;
+				synchronized (buffOut) {
+					buffOut.notify();
+				}
+			}
+			throw e;
 		}
 		return bytesRead;
 	}
@@ -60,22 +78,33 @@ public class Channel extends ChannelAbstract {
 		}
 
 		int bytesWritten = 0;
-		while (bytesWritten < length) {	
-			if (localDisconnected || remoteDisconnected.get()) {
-				// Drop bytes silently after disconnection
-				return bytesWritten;
-			}
-
-			if (!buffOut.full()) {
-				try {
-					buffOut.push(bytes[offset + bytesWritten]);
-				} catch (IllegalStateException e) {
-					System.err.println("Error: " + e.getMessage());
-					break;
+		while (bytesWritten == 0) {	
+			if (buffOut.full()) {
+				synchronized (buffOut) {
+					while (buffOut.full()){
+						if (localDisconnected) {
+							throw new IllegalStateException("Channel is disconnected, cannot read.");
+						}
+						if (remoteDisconnected.get()) {
+							return length; // Silently ignore writing if remote side is disconnected
+						}
+						try {
+							buffOut.wait();
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+					}
 				}
-				bytesWritten++;
-			} else {
-				break;
+			}
+		
+			while (bytesWritten < length && !buffOut.full()) {
+					buffOut.push(bytes[offset + bytesWritten]);
+					bytesWritten++;
+			}
+			if (bytesWritten != 0) {
+				synchronized (buffOut) {
+					buffOut.notify();
+				}
 			}
 		}
 		return bytesWritten;
