@@ -110,16 +110,26 @@ public class example {
         }
     }
 
-    protected static Boolean VERBOSE = true;
+    private void validate(byte[] echoBuffer, String message) {
+        if(echoBuffer == null) System.err.println("echoBuffer is null, but it shouldn't be.");
+        if(!new String(echoBuffer, 0, echoBuffer.length).equals(message)) System.err.println("Message content mismatch.");
+        if(echoBuffer.length != message.length()) System.err.println("Message length mismatch.");
+                    
+    }
+
+    protected static Boolean VERBOSE = false;
     public static void main(String[] args) {
         // Create a new test object
         example test = new example();
         // Run the test
-        //test.test1();
-        //test.test2();
+        test.test1();
+        System.out.println("Test 1 passed");
+        test.test2();
+        System.out.println("Test 2 passed");
         test.test3();
-
-        //test.test4();
+        System.out.println("Test 3 passed");
+        test.test4();
+        System.out.println("Test 4 passed");
     }
 
     protected class EchoServer implements Runnable {
@@ -158,8 +168,10 @@ public class example {
                         String message = "Broker " + brokerName + " message number " + nbMessages;
                         writeSizeAndMessage(serverChannel, message.getBytes());
 
-                        readSizeAndMessage(serverChannel);
+                        byte[] echoBuffer = readSizeAndMessage(serverChannel);
     
+                        validate(echoBuffer, message);
+
                         nbMessages++;
                     }
                 }
@@ -173,7 +185,7 @@ public class example {
     }
 
     public void test1() {
-        Broker broker = new Broker("Broker1");
+        Broker broker = new Broker("BrokerT1");
 
         Task serverTask = new Task(broker, new Runnable() {
             @Override
@@ -209,13 +221,13 @@ public class example {
             public void run() {
                 try {
                     // Connect to the server on port 8080
-                    Channel clientChannel = (Channel) broker.connect("Broker1", 8080);
+                    Channel clientChannel = (Channel) broker.connect("BrokerT1", 8080);
                     
 
                     int nbMessages = 0;
 
                     while (nbMessages < 10) {
-                        String message = "Message " + nbMessages;
+                        String message = LOREM_IPSUM;
 
                         writeSizeAndMessage(clientChannel, message.getBytes());
 
@@ -224,9 +236,7 @@ public class example {
 
                         byte[] echoBuffer = readSizeAndMessage(clientChannel);
 
-                        assert echoBuffer != null;
-                        assert new String(echoBuffer, 0, echoBuffer.length).equals(message);
-                        assert echoBuffer.length == message.length();
+                        validate(echoBuffer, message);
 
                         nbMessages++;
                     }
@@ -247,8 +257,8 @@ public class example {
     }
 
     public void test2() {
-        Broker broker = new Broker("Broker1");
-        Broker broker2 = new Broker("Broker2");
+        Broker broker = new Broker("BrokerT21");
+        Broker broker2 = new Broker("BrokerT22");
 
         Task serverTask = new Task(broker, new Runnable() {
             @Override
@@ -280,13 +290,13 @@ public class example {
             public void run() {
                 try {
                     // Connect to the server on port 8080
-                    Channel clientChannel = (Channel) broker2.connect("Broker1", 8080);
+                    Channel clientChannel = (Channel) broker2.connect("BrokerT21", 8080);
                     
 
                     int nbMessages = 0;
 
                     while (nbMessages < 10) {
-                        String message = "Message " + nbMessages;
+                        String message = LOREM_IPSUM;
 
                         writeSizeAndMessage(clientChannel, message.getBytes());
 
@@ -294,9 +304,7 @@ public class example {
 
                         byte[] echoBuffer = readSizeAndMessage(clientChannel);
 
-                        assert echoBuffer != null;
-                        assert new String(echoBuffer, 0, echoBuffer.length).equals(message);
-                        assert echoBuffer.length == message.length();
+                        validate(echoBuffer, message);
 
                         nbMessages++;
                     }
@@ -321,10 +329,10 @@ public class example {
         ArrayList<Task> tasks = new ArrayList<Task>();
 
         for (int i = 0; i < 1000; i++) {
-            Broker broker = new Broker("Broker" + i);
+            Broker broker = new Broker("BrokerT3" + i);
             brokers.add(broker);
-            Task serverTask = new Task(broker, new EchoServer(broker, true, "Broker" + i, i));
-            Task clientTask = new Task(broker, new EchoServer(broker, false, "Broker" + i, i));
+            Task serverTask = new Task(broker, new EchoServer(broker, true, "BrokerT3" + i, i));
+            Task clientTask = new Task(broker, new EchoServer(broker, false, "BrokerT3" + i, i));
             tasks.add(serverTask);
             tasks.add(clientTask);
         }
@@ -339,7 +347,7 @@ public class example {
     }
 
     public void test4() {
-        Broker broker = new Broker("Broker1");
+        Broker broker = new Broker("BrokerT4");
 
         Task serverTask = new Task(broker, new Runnable() {
             @Override
@@ -383,13 +391,13 @@ public class example {
             public void run() {
                 try {
                     // Connect to the server on port 8080
-                    Channel clientChannel = (Channel) broker.connect("Broker1", 8080);
+                    Channel clientChannel = (Channel) broker.connect("BrokerT4", 8080);
                     
 
                     int nbMessages = 0;
 
                     while (nbMessages < 6) {
-                        String message = "Message " + nbMessages;
+                        String message = LOREM_IPSUM;
 
                         writeSizeAndMessage(clientChannel, message.getBytes());
 
@@ -397,9 +405,7 @@ public class example {
 
                         byte[] echoBuffer = readSizeAndMessage(clientChannel);
 
-                        assert echoBuffer != null;
-                        assert new String(echoBuffer, 0, echoBuffer.length).equals(message);
-                        assert echoBuffer.length == message.length();
+                        validate(echoBuffer, message);
 
                         nbMessages++;
                     }

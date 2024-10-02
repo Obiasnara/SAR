@@ -38,4 +38,8 @@ public class BrokerManager {
     public synchronized BrokerAbstract removeBroker(String name) {
         return brokers.remove(name);
     }
+
+    public synchronized void removeAllBrokers() {
+        brokers.clear();
+    }
 }

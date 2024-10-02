@@ -20,7 +20,7 @@ boolean closed();
 ```
 
 - **send(byte[] bytes, int offset, int length)**
-    - This method sends a message to the queue. The message is a byte array. The offset is the index of the first byte to send, and the length is the number of bytes to send. The method is blocking. It will wait until there is enough space in the queue to send the full message.
+    - This method sends a message to the queue. The message is a byte array. The offset is the index of the first byte to send, and the length is the number of bytes to send. The method is blocking. It will wait until there is enough space in the queue to send the full message. The size of the message is limited by the size of `int`, for example, the maximum size of a message is `Integer.MAX_VALUE`. Any longer message will need to be split into multiple messages.
 - **byte[] receive()** 
     - This method receives a message from the queue. The method is blocking. It will wait until there is a message in the queue to receive and then reads it fully.
 - **close()**
@@ -50,3 +50,14 @@ static Task getTask();
     - This method returns the QueueBroker associated with the Task.
 - **static Task getTask()**
     - This method returns the Task associated with the current thread.
+
+
+## Design
+
+The design looks basically the same as the previous one, but with the added Queue elements on top of the existing ones.
+
+## Image
+
+![Design](DesignQueue.jpg)
+![Board image capture](Tableau.png)
+![Board image capture number two](Tableau2.png)

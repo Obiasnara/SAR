@@ -49,8 +49,8 @@ public class Channel extends ChannelAbstract {
 				}
 			
 				while( bytesRead < length && !buffIn.empty()) {
-						bytes[offset + bytesRead] = buffIn.pull();
-						bytesRead++;
+					bytes[offset + bytesRead] = buffIn.pull();
+					bytesRead++;
 				} 
 				if (bytesRead > 0) {
 					synchronized (buffIn) {

@@ -23,5 +23,9 @@ public class QueueBroker extends QueueBrokerAbstract {
     	ChannelAbstract chan = br.connect(name, port);
     	return new QueueChannel(chan);
     }
-
+    
+    public String name() {
+    	return name;
+    }
+    
 }
