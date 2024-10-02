@@ -1,8 +1,9 @@
-package implems;
+package implems.thread_queue;
 
 import abstracts.ChannelAbstract;
-import abstracts.QueueBrokerAbstract;
-import abstracts.QueueChannelAbstract;
+import abstracts.thread_queue.QueueBrokerAbstract;
+import abstracts.thread_queue.QueueChannelAbstract;
+import implems.Broker;
 
 public class QueueBroker extends QueueBrokerAbstract {
     

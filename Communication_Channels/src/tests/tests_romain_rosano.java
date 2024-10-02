@@ -1,11 +1,11 @@
 package tests;
 
 import abstracts.BaseBrokerAbstract;
-import abstracts.QueueBrokerAbstract;
-import abstracts.QueueChannelAbstract;
+import abstracts.thread_queue.QueueBrokerAbstract;
+import abstracts.thread_queue.QueueChannelAbstract;
 import implems.BrokerManager;
-import implems.QueueBroker;
-import implems.Task;
+import implems.thread_queue.QueueBroker;
+import implems.thread_queue.Task;
 
 public class tests_romain_rosano {
 

@@ -1,9 +1,9 @@
-package implems;
+package implems.thread_queue;
 
 import java.nio.ByteBuffer;
 
 import abstracts.ChannelAbstract;
-import abstracts.QueueChannelAbstract;
+import abstracts.thread_queue.QueueChannelAbstract;
 
 public class QueueChannel extends QueueChannelAbstract {
 

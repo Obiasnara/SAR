@@ -1,11 +1,12 @@
 package tests;
 
 import abstracts.BaseBrokerAbstract;
-import abstracts.QueueBrokerAbstract;
-import abstracts.QueueChannelAbstract;
+import abstracts.thread_queue.QueueBrokerAbstract;
+import abstracts.thread_queue.QueueChannelAbstract;
 import implems.Channel;
-import implems.QueueBroker;
-import implems.Task;
+import implems.thread_queue.QueueBroker;
+import implems.thread_queue.Task;
+
 import java.nio.charset.StandardCharsets;
 
 public class queueTests {

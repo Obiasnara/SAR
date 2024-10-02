@@ -1,4 +1,6 @@
-package abstracts;
+package abstracts.thread_queue;
+
+import abstracts.BaseBrokerAbstract;
 
 public abstract class QueueBrokerAbstract extends BaseBrokerAbstract {
     //	public QueueBroker(String name) { };

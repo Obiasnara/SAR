@@ -1,9 +1,9 @@
-package implems;
+package implems.thread_queue;
 
 import abstracts.BaseBrokerAbstract;
 import abstracts.BrokerAbstract;
-import abstracts.QueueBrokerAbstract;
-import abstracts.TaskAbstract;
+import abstracts.thread_queue.QueueBrokerAbstract;
+import abstracts.thread_queue.TaskAbstract;
 
 public class Task extends TaskAbstract {
 

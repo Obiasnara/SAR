@@ -1,6 +1,8 @@
 package tests;
 
 import implems.*;
+import implems.thread_queue.Task;
+
 import java.util.ArrayList;
 
 /**

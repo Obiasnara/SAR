@@ -1,4 +1,4 @@
-package abstracts;
+package abstracts.thread_queue;
 
 public abstract class QueueChannelAbstract {
     public abstract void send(byte[] bytes, int offset, int length);
