@@ -9,90 +9,10 @@ import implems.Task;
 import java.nio.charset.StandardCharsets;
 
 public class queueTests {
-	
-    public static byte[] getMessageSize(int size) {
-        byte[] sizeBytes = new byte[4];
-        sizeBytes[0] = (byte) (size >> 24);
-        sizeBytes[1] = (byte) (size >> 16);
-        sizeBytes[2] = (byte) (size >> 8);
-        sizeBytes[3] = (byte) size;
-        return sizeBytes;
-    }
-
-    public static int getSizeFromMessage(byte[] sizeBytes) {
-        return (sizeBytes[0] << 24) | (sizeBytes[1] << 16) | (sizeBytes[2] << 8) | sizeBytes[3];
-    }
-
-    public static int readMessageSize(Channel channel) {
-        byte[] sizeBytes = new byte[4];
-        // We need to use a While loop to make sure we read all 4 bytes
-        int bytesRead = 0;
-        int response = 0;
-        while (bytesRead < 4) {
-            response = channel.read(sizeBytes, bytesRead, 4 - bytesRead);
-            if (response == -1) {
-                return -1;
-            }
-            bytesRead += response;
-        }
-        return getSizeFromMessage(sizeBytes);
-    }
-
-    public static byte[] readSizeAndMessage(Channel channel) {
-        int messageSize = readMessageSize(channel);
-        if (messageSize <= 0) {
-            return null;
-        }
-    
-        // Log message size for debugging
-        if (VERBOSE) {
-            System.out.println("Expected message size: " + messageSize);
-        }
-    
-        byte[] buffer = new byte[messageSize];
-        int bytesRead = 0;
-    
-        while (bytesRead < messageSize) {
-            int response = channel.read(buffer, bytesRead, messageSize - bytesRead);
-            if (response == -1) {
-                return null;
-            }
-    
-            bytesRead += response;
-        }
-    
-        if (VERBOSE) {
-            System.out.println("Received message: " + new String(buffer, 0, buffer.length, StandardCharsets.UTF_8));
-        }
-    
-        return buffer;
-    }
-    
-    public static void writeSizeAndMessage(Channel channel, byte[] message) {
-        byte[] sizeBytes = getMessageSize(message.length);
-        byte[] buffer = new byte[sizeBytes.length + message.length];
-        System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
-        System.arraycopy(message, 0, buffer, sizeBytes.length, message.length);
-    
-        int bytesWritten = 0;
-        while (bytesWritten < buffer.length) {
-            int response = channel.write(buffer, bytesWritten, buffer.length - bytesWritten);
-            if (response == -1) {
-                return;
-            }
-            bytesWritten += response;
-        }
-    
-        if (VERBOSE) {
-            System.out.println("Sent message: " + new String(message, 0, message.length, StandardCharsets.UTF_8));
-        }
-    }
-    
-
+	    
     private void validate(byte[] echoBuffer, String message) {
         if(echoBuffer == null) System.err.println("echoBuffer is null, but it shouldn't be.");
         if(!new String(echoBuffer, 0, echoBuffer.length).equals(message)) System.err.println("Message content mismatch.");
-        if(echoBuffer.length != message.length()) System.err.println("Message length mismatch.");
     }
 
     protected static Boolean VERBOSE = true;
