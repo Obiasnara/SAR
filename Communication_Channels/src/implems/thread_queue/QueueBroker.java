@@ -16,12 +16,22 @@ public class QueueBroker extends QueueBrokerAbstract {
 	}
 	
 	public QueueChannelAbstract accept(int port) {
-    	ChannelAbstract chan = br.accept(port);
+    	ChannelAbstract chan = null;
+		try {
+			chan = br.accept(port);
+		} catch (InterruptedException e) {
+			System.err.println("This behaviour emerged with event_queue, a Task has 5s to connect or accept");
+		}
     	return new QueueChannel(chan);
     }
 
     public QueueChannelAbstract connect(String name, int port) {
-    	ChannelAbstract chan = br.connect(name, port);
+    	ChannelAbstract chan = null;
+		try {
+			chan = br.connect(name, port);
+		} catch (InterruptedException e) {
+			System.err.println("This behaviour emerged with event_queue, a Task has 5s to connect or accept");
+		}
     	return new QueueChannel(chan);
     }
     

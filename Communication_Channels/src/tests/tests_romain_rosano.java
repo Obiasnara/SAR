@@ -1,6 +1,5 @@
 package tests;
 
-import abstracts.BaseBrokerAbstract;
 import abstracts.thread_queue.QueueBrokerAbstract;
 import abstracts.thread_queue.QueueChannelAbstract;
 import implems.BrokerManager;
@@ -51,7 +50,7 @@ public class tests_romain_rosano {
     public static void test1() throws Exception {
         System.out.println("Test 1 in progress...");
 
-        BaseBrokerAbstract clientBroker = new QueueBroker("Client");
+        QueueBrokerAbstract clientBroker = new QueueBroker("Client");
         QueueBrokerAbstract clientQueueBroker = (QueueBrokerAbstract) clientBroker;
         Task clientTask = new Task(clientQueueBroker, new Runnable() {
             @Override
@@ -70,7 +69,7 @@ public class tests_romain_rosano {
             }
         });
 
-        BaseBrokerAbstract serverBroker = new QueueBroker("Server");
+        QueueBrokerAbstract serverBroker = new QueueBroker("Server");
         QueueBrokerAbstract serverQueueBroker = (QueueBrokerAbstract) serverBroker;
         Task serverTask = new Task(serverQueueBroker, new Runnable() {
             @Override
@@ -100,12 +99,12 @@ public class tests_romain_rosano {
     private static void test2(int port, int times, int testInstance) throws Exception {
         System.out.println("Test 2." + testInstance + " in progress...");
 
-        BaseBrokerAbstract clientBroker = new QueueBroker("Client");
+        QueueBrokerAbstract clientBroker = new QueueBroker("Client");
         QueueBrokerAbstract clientQueueBroker = (QueueBrokerAbstract) clientBroker;
         Task clientTask = new Task(clientQueueBroker,
                 clientRunnable(clientQueueBroker, port, "Server", CLIENT_MESSAGE, times, true));
 
-        BaseBrokerAbstract serverBroker = new QueueBroker("Server");
+        QueueBrokerAbstract serverBroker = new QueueBroker("Server");
         QueueBrokerAbstract serverQueueBroker = (QueueBrokerAbstract) serverBroker;
         Task serverTask = new Task(serverQueueBroker, serverRunnable(serverQueueBroker, port, times));
 
@@ -124,12 +123,12 @@ public class tests_romain_rosano {
         int times = 10;
 
         for (int i = 0; i < clientCount; i++) {
-            BaseBrokerAbstract clientBroker = new QueueBroker("Client " + (i + 1));
+        	QueueBrokerAbstract clientBroker = new QueueBroker("Client " + (i + 1));
             QueueBrokerAbstract clientQueueBroker = (QueueBrokerAbstract) clientBroker;
             tasks[2 * i] = new Task(clientQueueBroker,
                     clientRunnable(clientQueueBroker, port + i, "Server " + (i + 1), CLIENT_MESSAGE, times, true));
 
-            BaseBrokerAbstract serverBroker = new QueueBroker("Server " + (i + 1));
+            QueueBrokerAbstract serverBroker = new QueueBroker("Server " + (i + 1));
             QueueBrokerAbstract serverQueueBroker = (QueueBrokerAbstract) serverBroker;
             tasks[2 * i + 1] = new Task(serverQueueBroker, serverRunnable(serverQueueBroker, port + i, times));
         }
@@ -148,12 +147,12 @@ public class tests_romain_rosano {
         Task[] tasks = new Task[clientCount];
         int port = 1234;
 
-        BaseBrokerAbstract serverBroker = new QueueBroker("Server");
+        QueueBrokerAbstract serverBroker = new QueueBroker("Server");
         QueueBrokerAbstract serverQueueBroker = (QueueBrokerAbstract) serverBroker;
         Task serverTask = new Task(serverQueueBroker, realServerRunnable(serverQueueBroker, port));
 
         for (int i = 0; i < clientCount; i++) {
-            BaseBrokerAbstract clientBroker = new QueueBroker("Client " + i);
+        	QueueBrokerAbstract clientBroker = new QueueBroker("Client " + i);
             QueueBrokerAbstract clientQueueBroker = (QueueBrokerAbstract) clientBroker;
             tasks[i] = new Task(clientQueueBroker,
                     clientRunnable(clientQueueBroker, port, "Server", CLIENT_MESSAGE, 1, waitForEcho));

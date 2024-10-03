@@ -1,6 +1,5 @@
 package tests;
 
-import abstracts.BaseBrokerAbstract;
 import abstracts.thread_queue.QueueBrokerAbstract;
 import abstracts.thread_queue.QueueChannelAbstract;
 import implems.Channel;
@@ -16,16 +15,18 @@ public class queueTests {
         if(!new String(echoBuffer, 0, echoBuffer.length).equals(message)) System.err.println("Message content mismatch.");
     }
 
-    protected static Boolean VERBOSE = true;
+    protected static Boolean VERBOSE = false;
     public static void main(String[] args) {
         // Create a new test object
         queueTests test = new queueTests();
         // Run the test
         test.test1();
+        
+        System.out.println("Program ended");
     }
 
     protected class EchoServer implements Runnable {
-        protected BaseBrokerAbstract broker;
+        protected QueueBrokerAbstract broker;
         protected boolean isAccept;
         protected String brokerName;
         protected int port;

@@ -1,23 +1,29 @@
 package implems.thread_queue;
 
-import abstracts.BaseBrokerAbstract;
 import abstracts.BrokerAbstract;
 import abstracts.thread_queue.QueueBrokerAbstract;
 import abstracts.thread_queue.TaskAbstract;
 
 public class Task extends TaskAbstract {
 
-	// Task has a UUID, a broker and a runnable
-	private String uuid;
-	private BaseBrokerAbstract broker;
+	private BrokerAbstract broker;
+	private QueueBrokerAbstract queueBroker;
 	private Runnable runnable;
 	private Thread thread;
 
-	public Task(BaseBrokerAbstract b, Runnable r) {
+	public Task(BrokerAbstract b, Runnable r) {
         this.broker = b;
         this.runnable = r;
-        this.uuid = java.util.UUID.randomUUID().toString();
-        this.thread = new Thread(this.runnable, uuid);
+    
+        this.thread = new Thread(this.runnable);
+        this.thread.start();
+    }
+	
+	public Task(QueueBrokerAbstract b, Runnable r) {
+        this.queueBroker = b;
+        this.runnable = r;
+    
+        this.thread = new Thread(this.runnable);
         this.thread.start();
     }
 
@@ -26,6 +32,6 @@ public class Task extends TaskAbstract {
 	}
 	
 	public static QueueBrokerAbstract getQueueBroker() { 
-		return (QueueBrokerAbstract) ((Task) Thread.currentThread()).broker;
+		return ((Task) Thread.currentThread()).queueBroker;
 	}
 }

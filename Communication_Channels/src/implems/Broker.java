@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,17 +27,18 @@ public class Broker extends BrokerAbstract {
 		private CircularBuffer buffOut;
 		private AtomicBoolean disconnected = new AtomicBoolean(false);
 		private CountDownLatch latch = new CountDownLatch(2);
-
+		private static final long TIMEOUT = 5; // Timeout in seconds
+		
 		private RDV() {
 			this.buffIn = new CircularBuffer(BUFFER_SIZE);
 			this.buffOut = new CircularBuffer(BUFFER_SIZE);
 		}
 
-		protected ChannelAbstract accept() {
+		protected ChannelAbstract accept() throws InterruptedException {
 			latch.countDown();
 
 			try {
-				latch.await();
+				latch.await(TIMEOUT, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -44,11 +46,11 @@ public class Broker extends BrokerAbstract {
 			return new Channel(buffOut, buffIn, disconnected);
 		}
 
-		protected ChannelAbstract connect() {
+		protected ChannelAbstract connect() throws InterruptedException {
 			latch.countDown();
 
 			try {
-				latch.await();
+				latch.await(TIMEOUT, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -65,7 +67,7 @@ public class Broker extends BrokerAbstract {
 	}
 
 	@Override
-	public ChannelAbstract accept(int port) {
+	public ChannelAbstract accept(int port) throws InterruptedException {
 		requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<>());
 		LinkedBlockingQueue<RDV> queue = requestList.get(port);
 
@@ -76,7 +78,7 @@ public class Broker extends BrokerAbstract {
 
 
 	@Override
-	public ChannelAbstract connect(String name, int port) {
+	public ChannelAbstract connect(String name, int port) throws InterruptedException {
 		if (this.name.equals(name)) {
 			requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<>());
 			LinkedBlockingQueue<RDV> queue = requestList.get(port);
