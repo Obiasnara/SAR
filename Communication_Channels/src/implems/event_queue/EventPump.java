@@ -18,7 +18,7 @@ public class EventPump {
             while (running.get()) {
                 try {
                     Runnable task = taskQueue.take(); // Blocks until a task is available
-                    task.run();
+                    new Thread(task).start();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;

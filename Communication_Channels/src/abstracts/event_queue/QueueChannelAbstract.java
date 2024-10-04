@@ -1,13 +1,19 @@
 package abstracts.event_queue;
 
+import implems.event_queue.Message;
+
 public abstract class QueueChannelAbstract {
 	public interface Listener {
-		void recieved(byte[] msg);
+		void received(byte[] msg);
 		void sent(Message msg);
 		void closed();
 	}
 	
 	public abstract void setListener(Listener l);
 	
+	public abstract boolean send(Message mst);
 	
+	public abstract void close();
+	
+	public abstract boolean closed();
 }

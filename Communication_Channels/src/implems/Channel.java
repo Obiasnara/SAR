@@ -8,6 +8,7 @@ public class Channel extends ChannelAbstract {
 
 	private volatile boolean localDisconnected = false;   
 	private final AtomicBoolean remoteDisconnected; 
+
 	
     protected CircularBuffer buffIn;
 	protected CircularBuffer buffOut;
