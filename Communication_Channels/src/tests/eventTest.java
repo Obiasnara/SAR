@@ -43,8 +43,7 @@ public class eventTest {
 				
 				@Override
 				public void closed() {
-					// TODO Auto-generated method stub
-					
+					System.out.println("Response to remote channel closing");
 				}
 			};
 			
@@ -69,7 +68,7 @@ public class eventTest {
 		Runnable rConn = new Runnable() {
 			
 			QueueChannelAbstract qca;
-			
+			int nb_messages = 0;
 			Listener msgLiss = new Listener() {
 				
 				@Override
@@ -83,12 +82,13 @@ public class eventTest {
 					System.out.println("Received " + new String(msg));
 					Message msge = new Message(msg);
 					qca.send(msge);
+					nb_messages++;
+					if(nb_messages == 10) qca.close();
 				}
 				
 				@Override
 				public void closed() {
-					// TODO Auto-generated method stub
-					
+					System.out.println("Channel closed !");
 				}
 			};
 			

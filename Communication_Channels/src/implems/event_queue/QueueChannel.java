@@ -83,13 +83,18 @@ public class QueueChannel extends QueueChannelAbstract {
                     break;
                 }
             }
+            if(channelListener != null) {
+            	channelListener.closed();
+            }
         });
     }
 
 	@Override
 	public void close() {
+		connectedChannel.disconnect();
 		channelListener.closed();
 		isClosed = true;
+		channelListener = null;
 	}
 
 	@Override
