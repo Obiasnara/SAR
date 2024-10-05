@@ -20,103 +20,95 @@ public class eventTest {
 	protected void test1() {
 		QueueBroker queuBroker = new QueueBroker("Broker1");
 		
-		TaskAbstract t1 = Task.task();
-		TaskAbstract t2 = Task.task();
-		
-		Runnable rAcc = new Runnable() {
-			
-			QueueChannelAbstract qca;
-			
-			Listener msgLiss = new Listener() {
-				
-				@Override
-				public void sent(Message msg) {
-					System.out.println("Message sent");
-				}
-				
-				@Override
-				public void received(byte[] msg) {
-					System.out.println("Received " + new String(msg));
-					Message msge = new Message(msg);
-					qca.send(msge);
-				}
-				
-				@Override
-				public void closed() {
-					System.out.println("Response to remote channel closing");
-				}
-			};
-			
-			AcceptListener ls = new AcceptListener() {
-				
-				@Override
-				public void accepted(QueueChannelAbstract queue) {
-					System.out.println("Accepted");
-					qca = queue;
-					queue.setListener(msgLiss);
-					Message m = new Message("StringTest".getBytes());
-					queue.send(m);
-				}
-			};
+		Task t1 = new Task();
+		Task t2 = new Task();
+	
+		Listener lt1 = new Listener() {
+			int max = 0;
 			
 			@Override
-			public void run() {
-				queuBroker.bind(8080, ls);
+			public void received(byte[] msg) {
+				if (t1.queue.closed()) return;
+				// TODO Auto-generated method stub
+				System.out.println("T1 Recieved : " + new String(msg));
+				t1.post(new WriteTask(t1.queue, new Message(msg)));
+				max++;	
+				
+				if(max == 10) {
+					t1.queue.close();
+				}
+			}
+
+			@Override
+			public void sent(Message msg) {
+				// TODO Auto-generated method stub
+				System.out.println("T1 Sent");
+			}
+
+			@Override
+			public void closed() {
+				// TODO Auto-generated method stub
+				System.out.println("Closed");
+			}
+			
+		};
+
+		Listener lt2 = new Listener() {
+			
+			
+			@Override
+			public void received(byte[] msg) {
+				if (t2.queue.closed()) return;
+				// TODO Auto-generated method stub
+				System.out.println("T2 Recieved : " + new String(msg));
+				t2.post(new WriteTask(t2.queue, new Message(msg)));
+				
+			}
+
+			@Override
+			public void sent(Message msg) {
+				// TODO Auto-generated method stub
+				System.out.println("T2 Sent");
+			}
+
+			@Override
+			public void closed() {
+				// TODO Auto-generated method stub
+				System.out.println("Closed");
+			}
+			
+		};
+		
+		ConnectListener cn = new ConnectListener() {
+			@Override
+			public void refused() {
+				System.out.println("Refused");
+			}
+			
+			@Override
+			public void connected(QueueChannelAbstract queue) {
+				System.out.println("Connected");
+				Message msg = new Message("Salut".getBytes());
+				t1.queue = (QueueChannel) queue;
+				t1.queue.setListener(lt1);
+				t1.post(new WriteTask(t1.queue, msg));
 			}
 		};
 		
-		Runnable rConn = new Runnable() {
-			
-			QueueChannelAbstract qca;
-			int nb_messages = 0;
-			Listener msgLiss = new Listener() {
-				
-				@Override
-				public void sent(Message msg) {
-					// TODO Auto-generated method stub
-					System.out.println("Message sent");
-				}
-				
-				@Override
-				public void received(byte[] msg) {
-					System.out.println("Received " + new String(msg));
-					Message msge = new Message(msg);
-					qca.send(msge);
-					nb_messages++;
-					if(nb_messages == 10) qca.close();
-				}
-				
-				@Override
-				public void closed() {
-					System.out.println("Channel closed !");
-				}
-			};
-			
-			ConnectListener cn = new ConnectListener() {
-				
-				@Override
-				public void refused() {
-					System.out.println("Refused");
-				}
-				
-				@Override
-				public void connected(QueueChannelAbstract queue) {
-					System.out.println("Connected");
-					qca = queue;
-					qca.setListener(msgLiss);
-				}
-			};
-			
+		AcceptListener al = new AcceptListener() {
 			@Override
-			public void run() {
-				queuBroker.connect("Broker1", 8080, cn);
+			public void accepted(QueueChannelAbstract queue) {
+				System.out.println("Accepted");
+				queue.setListener(lt2);
+				t2.queue = (QueueChannel) queue;
 			}
 		};
-		
-		t1.post(rConn);
-		t2.post(rAcc);
-		
-		
+		try {
+		t1.post(new ConnectTask(queuBroker, "Broker1", 8080, cn));
+		t2.post(new AcceptTask(queuBroker, 8080, al));
+		} catch (IllegalStateException e) {
+			System.out.println("Disconnected successfully");
+		}
 	}
 
 }

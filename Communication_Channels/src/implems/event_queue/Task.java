@@ -6,9 +6,11 @@ public class Task extends TaskAbstract {
 
     private Thread thread;
     private Runnable currentTask;
+    public QueueChannel queue;
 
     public static TaskAbstract task() {
-        return new Task();
+         //return (TaskAbstract) Thread.currentThread();
+    	return null;
     }
 
     @Override

@@ -34,60 +34,28 @@ public class QueueChannel extends QueueChannelAbstract {
 	public void setListener(Listener l) {
 		// TODO Auto-generated method stub
 		this.channelListener = l;
-		this.startReading();
+		EventPump.getInstance().post(new ReaderTask(connectedChannel, l));
 	}
 
 	@Override
 	public boolean send(Message msg) {
+		
+		// Sub optimal array handling TODO : Make it depend on msg
 		byte[] sizeBytes = ByteBuffer.allocate(Integer.BYTES).putInt(msg.length).array();
         byte[] buffer = new byte[sizeBytes.length + msg.length];
         System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
         System.arraycopy(msg.bytes, 0, buffer, sizeBytes.length, msg.length);
 		
-		int sentBytes = 0;
-		while (sentBytes != buffer.length) {
-			sentBytes += connectedChannel.write(buffer, sentBytes, buffer.length - sentBytes);
-		}
-		channelListener.sent(msg);
+        // We'll write what we can for now
+		msg.offset += connectedChannel.write(buffer, msg.offset, buffer.length - msg.offset);
 		
-		return true; // TODO : Change that to real write feedback
+		if(msg.offset != buffer.length) return false; // Next event will write more
+		
+		channelListener.sent(msg);
+		return true;
 	}
 	
-	// Continuously read from the channel in a separate task
-    public void startReading() {
-        EventPump.getInstance().post(() -> {
-            while (!connectedChannel.disconnected()) {
-                try {
-                    // Blocking call to read from the channel
-                	int messageSize = readMessageSize(connectedChannel);
-            		
-                    if (messageSize <= 0) {
-                        continue;
-                    }
-
-                    byte[] buffer = new byte[messageSize];
-                    int bytesRead = 0;
-
-                    while (bytesRead < messageSize) {
-                        int response = connectedChannel.read(buffer, bytesRead, messageSize - bytesRead);
-
-                        bytesRead += response;
-                    }
-                    
-                    if (channelListener != null) {
-                        channelListener.received(buffer);  // Notify listener when message is received
-                    }
-                } catch (Exception e) {
-                    // Handle interruptions or errors
-                    channelListener.closed();
-                    break;
-                }
-            }
-            if(channelListener != null) {
-            	channelListener.closed();
-            }
-        });
-    }
+	
 
 	@Override
 	public void close() {

@@ -2,29 +2,68 @@ package implems.event_queue;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class EventPump {
+public class EventPump extends Thread {
 
     private static EventPump instance;
     private final BlockingQueue<Runnable> taskQueue;
-    private final Thread pumpThread;
-    private final AtomicBoolean running = new AtomicBoolean(false);
 
     // Private constructor to prevent instantiation
     private EventPump() {
         this.taskQueue = new LinkedBlockingQueue<>();
-        this.pumpThread = new Thread(() -> {
-            while (running.get()) {
-                try {
-                    Runnable task = taskQueue.take(); // Blocks until a task is available
-                    new Thread(task).start();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        });
+    }
+    
+    public enum TaskType {
+        CONNECT, ACCEPT, READ, WRITE, UNKNOWN
+    }
+
+    public TaskType getTaskType(Runnable r) {
+        if (r instanceof ReaderTask) return TaskType.READ;
+        if (r instanceof WriteTask) return TaskType.WRITE;
+        if (r instanceof AcceptTask) return TaskType.ACCEPT;
+        if (r instanceof ConnectTask) return TaskType.CONNECT;
+        
+        return TaskType.UNKNOWN;
+    }
+    
+    protected final boolean VERBOSE = false;
+    
+    public synchronized void run() {
+    	Runnable r;
+    	while(true) {
+    		if (VERBOSE) System.out.println(taskQueue);
+    		r = taskQueue.poll();
+    		while(r!=null) {
+    			switch (getTaskType(r)) {
+    				case READ:
+    					if (VERBOSE) System.out.println("READ");
+    					new Thread(r).start();
+    					break;
+    				case WRITE:
+    					if (VERBOSE) System.out.println("WRITE");
+						r.run();
+						break;
+    				case ACCEPT:
+    					if (VERBOSE) System.out.println("ACCEPT");
+						r.run();
+						break;
+					case CONNECT:
+						if (VERBOSE) System.out.println("CONNECT");
+						r.run();
+						break;
+					case UNKNOWN:
+						if (VERBOSE) System.out.println("UNKNOWN");
+    					r.run();
+    					break;
+				
+				default:
+					break;
+    			}
+    			if (VERBOSE) System.out.println(taskQueue);
+    			r = taskQueue.poll();
+    		}
+    		sleep();
+    	}
     }
 
     // Static method to get the single instance of EventPump
@@ -34,20 +73,6 @@ public class EventPump {
         }
         return instance;
     }
-
-    // Starts the event pump
-    public void start() {
-        if (!running.get()) {
-            running.set(true);
-            pumpThread.start();
-        }
-    }
-
-    // Stops the event pump
-    public void stop() {
-        running.set(false);
-        pumpThread.interrupt();
-    }
     
     // Removes a task from the queue
     public boolean remove(Runnable task) {
@@ -55,16 +80,17 @@ public class EventPump {
     }
 
     // Posts a task to the queue
-    public void post(Runnable task) {
-        if (running.get()) {
-            taskQueue.offer(task);
-        } else {
-            throw new IllegalStateException("EventPump is not running.");
-        }
+    public synchronized void  post(Runnable task) {
+        taskQueue.offer(task);
+        notify();
     }
 
-    // Checks if the pump is running
-    public boolean isRunning() {
-        return running.get();
+  
+    private void sleep() {
+    	try {
+    		wait();
+    	} catch (InterruptedException ex) {
+    		// Do nothing	
+    	}
     }
 }

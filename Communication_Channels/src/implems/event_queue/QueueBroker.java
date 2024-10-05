@@ -4,6 +4,7 @@ import abstracts.ChannelAbstract;
 import abstracts.event_queue.QueueBrokerAbstract;
 import abstracts.event_queue.QueueChannelAbstract;
 import implems.Broker;
+import implems.Channel;
 
 public class QueueBroker extends QueueBrokerAbstract {
 
@@ -15,18 +16,47 @@ public class QueueBroker extends QueueBrokerAbstract {
 		this.name = name;
 	}
 	
+	protected class ConnectHandler implements Runnable {
+
+		private int port;
+		private String name;
+	    private ChannelAbstract ch; // Replace SomeClass with the actual type of 'br'
+	    private Broker br;
+	    
+	    public ConnectHandler(int port, String name, Broker br, ChannelAbstract ch) {
+	        this.port = port;
+	        this.br = br;
+	        this.name = name;
+	    }
+
+	    @Override
+	    public void run() {
+	        try {
+				this.ch = br.connect(name, port);
+			} catch (InterruptedException e) {
+				System.out.println("Timed out");
+			} 
+	    }
+	    
+	    public ChannelAbstract getChannel() {
+	    	return this.ch;
+	    }
+		
+	}
+	
 	@Override
 	public boolean bind(int port, AcceptListener listener) {
-		ChannelAbstract chan;
-		try {
-			chan = br.accept(port);
-		} catch (InterruptedException e) {
-			System.out.println("TimedOut");
-			return false;
-		}
-		QueueChannelAbstract queueChannel = new QueueChannel(chan);
-		listener.accepted(queueChannel);
-		return true; // TODO: True for now, will change this later
+		Thread th = new Thread(() -> {
+			try {
+				ChannelAbstract ch = br.accept(port);
+				QueueChannelAbstract queueChannel = new QueueChannel(ch);
+				listener.accepted(queueChannel);
+			} catch (InterruptedException e) {
+				System.out.println("Timed out");
+			} 
+        });
+		th.start();
+		return true;
 	}
 
 	@Override
@@ -36,16 +66,16 @@ public class QueueBroker extends QueueBrokerAbstract {
 
 	@Override
 	public boolean connect(String name, int port, ConnectListener listener) {
-		ChannelAbstract chan;
-		try {
-			chan = br.connect(name, port);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			listener.refused();
-			return false;
-		}
-		QueueChannelAbstract queueChannel = new QueueChannel(chan);
-		listener.connected(queueChannel);
+		Thread th = new Thread(() -> {
+			try {
+				ChannelAbstract ch = br.connect(name, port);
+				QueueChannelAbstract queueChannel = new QueueChannel(ch);
+				listener.connected(queueChannel);
+			} catch(InterruptedException e) {
+				System.out.println("Timed out");
+			}
+		});
+		th.start();
 		return true;
 	}
 

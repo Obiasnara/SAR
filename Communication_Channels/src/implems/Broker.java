@@ -2,6 +2,8 @@ package implems;
 
 import abstracts.BrokerAbstract;
 import abstracts.ChannelAbstract;
+
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +21,7 @@ public class Broker extends BrokerAbstract {
 	private String name;
 	protected static final int BUFFER_SIZE = 10;
 	
-	private final ConcurrentHashMap<Integer, LinkedBlockingQueue<RDV>> requestList = new ConcurrentHashMap<Integer, LinkedBlockingQueue<RDV>>();
+	private final ConcurrentHashMap<Integer, LinkedList<RDV>> requestList = new ConcurrentHashMap<Integer, LinkedList<RDV>>();
 
 
 	protected class RDV {
@@ -68,11 +70,17 @@ public class Broker extends BrokerAbstract {
 
 	@Override
 	public ChannelAbstract accept(int port) throws InterruptedException {
-		requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<>());
-		LinkedBlockingQueue<RDV> queue = requestList.get(port);
-
-		RDV rdv = new RDV();  
-		queue.add(rdv);     
+		RDV rdv;
+		synchronized (requestList) {
+			requestList.computeIfAbsent(port, k -> new LinkedList<>());
+			LinkedList<RDV> queue = requestList.get(port);
+			
+			rdv = queue.poll();
+			if(rdv == null) {
+				rdv = new RDV();
+				queue.add(rdv);     
+			}
+		}
 		return rdv.accept(); 
 	}
 
@@ -80,15 +88,16 @@ public class Broker extends BrokerAbstract {
 	@Override
 	public ChannelAbstract connect(String name, int port) throws InterruptedException {
 		if (this.name.equals(name)) {
-			requestList.computeIfAbsent(port, k -> new LinkedBlockingQueue<>());
-			LinkedBlockingQueue<RDV> queue = requestList.get(port);
-
-			RDV rdv = null;
-			try {
-				// Wait until an RDV is available
-				rdv = queue.take();  // This will block until there is an RDV
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();  // Handle the interruption properly
+			RDV rdv;
+			synchronized (requestList) {
+				requestList.computeIfAbsent(port, k -> new LinkedList<>());
+				LinkedList<RDV> queue = requestList.get(port);
+				
+				rdv = queue.poll();
+				if(rdv == null) {
+					rdv = new RDV();
+					queue.add(rdv);     
+				}
 			}
 
 			return rdv.connect();  // Return the channel after connect
