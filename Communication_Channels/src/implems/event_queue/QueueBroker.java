@@ -4,6 +4,7 @@ import abstracts.ChannelAbstract;
 import abstracts.event_queue.QueueBrokerAbstract;
 import abstracts.event_queue.QueueChannelAbstract;
 import implems.Broker;
+import implems.BrokerManager;
 import implems.Channel;
 
 public class QueueBroker extends QueueBrokerAbstract {
@@ -14,34 +15,6 @@ public class QueueBroker extends QueueBrokerAbstract {
 	public QueueBroker(String name) {
 		this.br = new Broker(name);
 		this.name = name;
-	}
-	
-	protected class ConnectHandler implements Runnable {
-
-		private int port;
-		private String name;
-	    private ChannelAbstract ch; // Replace SomeClass with the actual type of 'br'
-	    private Broker br;
-	    
-	    public ConnectHandler(int port, String name, Broker br, ChannelAbstract ch) {
-	        this.port = port;
-	        this.br = br;
-	        this.name = name;
-	    }
-
-	    @Override
-	    public void run() {
-	        try {
-				this.ch = br.connect(name, port);
-			} catch (InterruptedException e) {
-				System.out.println("Timed out");
-			} 
-	    }
-	    
-	    public ChannelAbstract getChannel() {
-	    	return this.ch;
-	    }
-		
 	}
 	
 	@Override
@@ -61,11 +34,17 @@ public class QueueBroker extends QueueBrokerAbstract {
 
 	@Override
 	public boolean unbind(int port) {
-		return false;
+		if(this.br.requestList.get(port).poll() == null) return false;
+		return true;
+		
 	}
 
 	@Override
 	public boolean connect(String name, int port, ConnectListener listener) {
+		if (!BrokerManager.getInstance().brokerExists(name)) {
+			listener.refused();
+			return false;
+		}
 		Thread th = new Thread(() -> {
 			try {
 				ChannelAbstract ch = br.connect(name, port);

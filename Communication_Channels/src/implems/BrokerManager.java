@@ -35,6 +35,10 @@ public class BrokerManager {
         return brokers.get(name);
     }
 
+    public synchronized boolean brokerExists(String name) {
+        return brokers.get(name) != null;
+    }
+    
     public synchronized BrokerAbstract removeBroker(String name) {
         return brokers.remove(name);
     }

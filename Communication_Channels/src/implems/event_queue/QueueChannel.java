@@ -39,7 +39,6 @@ public class QueueChannel extends QueueChannelAbstract {
 
 	@Override
 	public boolean send(Message msg) {
-		
 		// Sub optimal array handling TODO : Make it depend on msg
 		byte[] sizeBytes = ByteBuffer.allocate(Integer.BYTES).putInt(msg.length).array();
         byte[] buffer = new byte[sizeBytes.length + msg.length];

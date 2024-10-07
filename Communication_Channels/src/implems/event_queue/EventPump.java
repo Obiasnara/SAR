@@ -7,10 +7,15 @@ public class EventPump extends Thread {
 
     private static EventPump instance;
     private final BlockingQueue<Runnable> taskQueue;
-
+    private boolean running;
     // Private constructor to prevent instantiation
     private EventPump() {
         this.taskQueue = new LinkedBlockingQueue<>();
+        running = true;
+    }
+    
+    public void stopPump() {
+    	running = false;
     }
     
     public enum TaskType {
@@ -30,14 +35,16 @@ public class EventPump extends Thread {
     
     public synchronized void run() {
     	Runnable r;
-    	while(true) {
+    	while(running) {
     		if (VERBOSE) System.out.println(taskQueue);
     		r = taskQueue.poll();
     		while(r!=null) {
     			switch (getTaskType(r)) {
     				case READ:
     					if (VERBOSE) System.out.println("READ");
-    					new Thread(r).start();
+    					Thread t = new Thread(r);
+    					t.setDaemon(true);
+    					t.start();
     					break;
     				case WRITE:
     					if (VERBOSE) System.out.println("WRITE");
@@ -81,6 +88,7 @@ public class EventPump extends Thread {
 
     // Posts a task to the queue
     public synchronized void  post(Runnable task) {
+    	if(!running) return; // Silently drop
         taskQueue.offer(task);
         notify();
     }

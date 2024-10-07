@@ -21,7 +21,7 @@ public class Broker extends BrokerAbstract {
 	private String name;
 	protected static final int BUFFER_SIZE = 10;
 	
-	private final ConcurrentHashMap<Integer, LinkedList<RDV>> requestList = new ConcurrentHashMap<Integer, LinkedList<RDV>>();
+	public final ConcurrentHashMap<Integer, LinkedList<RDV>> requestList = new ConcurrentHashMap<Integer, LinkedList<RDV>>();
 
 
 	protected class RDV {
@@ -75,7 +75,7 @@ public class Broker extends BrokerAbstract {
 			requestList.computeIfAbsent(port, k -> new LinkedList<>());
 			LinkedList<RDV> queue = requestList.get(port);
 			
-			rdv = queue.poll();
+			rdv = queue.peek();
 			if(rdv == null) {
 				rdv = new RDV();
 				queue.add(rdv);     
@@ -93,7 +93,7 @@ public class Broker extends BrokerAbstract {
 				requestList.computeIfAbsent(port, k -> new LinkedList<>());
 				LinkedList<RDV> queue = requestList.get(port);
 				
-				rdv = queue.poll();
+				rdv = queue.peek();
 				if(rdv == null) {
 					rdv = new RDV();
 					queue.add(rdv);     

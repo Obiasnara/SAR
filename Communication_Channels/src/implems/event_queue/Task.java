@@ -4,10 +4,10 @@ import abstracts.event_queue.TaskAbstract;
 
 public class Task extends TaskAbstract {
 
-    private Thread thread;
+	private boolean killed = false;
     private Runnable currentTask;
     public QueueChannel queue;
-
+    
     public static TaskAbstract task() {
          //return (TaskAbstract) Thread.currentThread();
     	return null;
@@ -15,8 +15,10 @@ public class Task extends TaskAbstract {
 
     @Override
     public void post(Runnable r) {
-        this.currentTask = r;
-        EventPump.getInstance().post(r);
+    	if (!killed) {
+	        this.currentTask = r;
+	        EventPump.getInstance().post(r);
+    	}
     }
 
     @Override
@@ -26,15 +28,14 @@ public class Task extends TaskAbstract {
             EventPump.getInstance().remove(this.currentTask);
             this.currentTask = null; // Clear reference to avoid reuse
         }
-
-        // Interrupt the thread if it's already started execution (ie, removed from queue and currently running)
-        if (this.thread != null && this.thread.isAlive()) {
-            this.thread.interrupt();
+        if (this.queue != null) {
+        	this.queue.close();
         }
-    }
+        killed = true;
+    }	
 
     @Override
     public boolean killed() {
-        return this.currentTask == null && (this.thread == null || this.thread.isInterrupted());
+        return killed;
     }
 }

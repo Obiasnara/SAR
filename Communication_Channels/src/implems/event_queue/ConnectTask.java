@@ -18,7 +18,11 @@ public class ConnectTask implements Runnable {
 	
 	@Override
 	public void run() {
-		qb.connect(name, port, cn);
+		if (qb.connect(name, port, cn)) {
+			System.out.println("Connected");
+		} else {
+			System.out.println("Connection failed");
+		}
 	}
 
 }

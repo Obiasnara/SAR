@@ -10,4 +10,9 @@ public class Message {
 		this.length = msg.length;
 		this.offset = 0;
 	}
+
+	public String getData() {
+		// TODO Auto-generated method stub
+		return bytes.toString();
+	}
 }
