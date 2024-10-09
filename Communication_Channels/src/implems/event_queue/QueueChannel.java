@@ -12,7 +12,8 @@ public class QueueChannel extends QueueChannelAbstract {
 	Listener channelListener;
 	
 	public static int readMessageSize(ChannelAbstract channel) {
-        byte[] sizeBytes = new byte[4];
+
+		byte[] sizeBytes = new byte[4];
 
         int bytesRead = 0;
         int response = 0;
@@ -39,23 +40,29 @@ public class QueueChannel extends QueueChannelAbstract {
 
 	@Override
 	public boolean send(Message msg) {
-		// Sub optimal array handling TODO : Make it depend on msg
-		byte[] sizeBytes = ByteBuffer.allocate(Integer.BYTES).putInt(msg.length).array();
-        byte[] buffer = new byte[sizeBytes.length + msg.length];
-        System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
-        System.arraycopy(msg.bytes, 0, buffer, sizeBytes.length, msg.length);
-		
-        // We'll write what we can for now
-		msg.offset += connectedChannel.write(buffer, msg.offset, buffer.length - msg.offset);
-		
-		if(msg.offset != buffer.length) return false; // Next event will write more
-		
-		Task.task().post(new Runnable() {	
+		if(this.isClosed) return false;
+		Runnable goToThreadedWorld = new Runnable() {
 			@Override
-			public void run() {
-				channelListener.sent(msg);
+		    public void run() {
+				byte[] sizeBytes = ByteBuffer.allocate(Integer.BYTES).putInt(msg.length).array();
+		        byte[] buffer = new byte[sizeBytes.length + msg.length];
+		        System.arraycopy(sizeBytes, 0, buffer, 0, sizeBytes.length);
+		        System.arraycopy(msg.bytes, 0, buffer, sizeBytes.length, msg.length);
+				
+				while (msg.offset != buffer.length) {
+					// 	We'll write what we can for now
+					msg.offset += connectedChannel.write(buffer, msg.offset, buffer.length - msg.offset);
+				}
+				Task.task().post(new Runnable() {	
+					@Override
+					public void run() {
+						channelListener.sent(msg);
+					}
+				});
 			}
-		});
+		};
+		
+		new implems.thread_queue.Task(goToThreadedWorld);
 		
 		return true;
 	}

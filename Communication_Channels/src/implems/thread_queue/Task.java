@@ -11,6 +11,14 @@ public class Task extends TaskAbstract {
 	private Runnable runnable;
 	private Thread thread;
 
+	public Task(Runnable r) {
+        this.broker = null;
+        this.runnable = r;
+    
+        this.thread = new Thread(this.runnable);
+        this.thread.start();
+    }
+	
 	public Task(BrokerAbstract b, Runnable r) {
         this.broker = b;
         this.runnable = r;

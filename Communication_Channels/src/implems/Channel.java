@@ -40,11 +40,11 @@ public class Channel extends ChannelAbstract {
 							if (localDisconnected || remoteDisconnected.get()) {
 								throw new IllegalStateException("Channel is disconnected, cannot read.");
 							}
-							try {
-								buffIn.wait();
-							} catch (InterruptedException e) {
-								// Ignore
-							}
+//							try {
+//								//buffIn.wait();
+//							} catch (InterruptedException e) {
+//								// Ignore
+//							}
 						}
 					}
 				}
@@ -89,11 +89,12 @@ public class Channel extends ChannelAbstract {
 						if (remoteDisconnected.get()) {
 							return length; // Silently ignore writing if remote side is disconnected
 						}
-						try {
-							buffOut.wait();
-						} catch (InterruptedException e) {
-							// Ignore
-						}
+//						try {
+//							
+//							//buffOut.wait();
+//						} catch (InterruptedException e) {
+//							// Ignore
+//						}
 					}
 				}
 			}

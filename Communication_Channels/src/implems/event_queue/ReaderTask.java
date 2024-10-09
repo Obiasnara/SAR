@@ -11,9 +11,8 @@ public class ReaderTask implements Runnable {
 	public ReaderTask(ChannelAbstract connectedChannel, Listener channelListener) {
 		this.connectedChannel = connectedChannel;
 		this.channelListener = channelListener;
-		Thread t = new Thread(this);
+		Thread t = new implems.thread_queue.Task(this);
 		t.setDaemon(true);
-		t.start();
 	}
 	
 	@Override

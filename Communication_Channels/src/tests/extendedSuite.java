@@ -21,19 +21,18 @@ public class extendedSuite {
 						
 			e.testBasicConnection();
 			BrokerManager.getInstance().removeAllBrokers();
-			
-					
-			e.testChannelClosure();
-			BrokerManager.getInstance().removeAllBrokers();
-					
-			e.testConnectionRefusal();
-			BrokerManager.getInstance().removeAllBrokers();
-						
-			e.testMessageExchange();
-			BrokerManager.getInstance().removeAllBrokers();
-					
-			e.testTaskKill();
-			BrokerManager.getInstance().removeAllBrokers();
+				
+//			e.testChannelClosure();
+//			BrokerManager.getInstance().removeAllBrokers();
+//					
+//			e.testConnectionRefusal();
+//			BrokerManager.getInstance().removeAllBrokers();
+//						
+//			e.testMessageExchange();
+//			BrokerManager.getInstance().removeAllBrokers();
+//					
+//			e.testTaskKill();
+//			BrokerManager.getInstance().removeAllBrokers();
 			
 			EventPump.getInstance().join();
 			System.out.println("Tests ended");

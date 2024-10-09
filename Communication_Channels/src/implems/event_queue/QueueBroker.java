@@ -19,22 +19,26 @@ public class QueueBroker extends QueueBrokerAbstract {
 	
 	@Override
 	public boolean bind(int port, AcceptListener listener) {
-		Thread th = new Thread(() -> {
-			try {
-				ChannelAbstract ch = br.accept(port);
-				QueueChannelAbstract queueChannel = new QueueChannel(ch);
-				Task.task().post(new Runnable() {	
-					@Override
-					public void run() {
-						listener.accepted(queueChannel);
-					}
-				});
-				
-			} catch (InterruptedException e) {
-				System.out.println("Timed out");
-			} 
-        });
-		th.start();
+		Runnable goToThreadedWorld = new Runnable() {
+			@Override
+		    public void run() {
+		
+				try {
+					ChannelAbstract ch = br.accept(port);
+					QueueChannelAbstract queueChannel = new QueueChannel(ch);
+					Task.task().post(new Runnable() {	
+						@Override
+						public void run() {
+							listener.accepted(queueChannel);
+						}
+					});
+					
+				} catch (InterruptedException e) {
+					System.out.println("Timed out");
+				} 
+			}
+		};
+		new implems.thread_queue.Task(this.br, goToThreadedWorld);
 		return true;
 	}
 
@@ -51,8 +55,10 @@ public class QueueBroker extends QueueBrokerAbstract {
 			listener.refused();
 			return false;
 		}
-		Thread th = new Thread(() -> {
-			try {
+		Runnable goToThreadedWorld = new Runnable() {
+			@Override
+		    public void run() {
+				try {
 				ChannelAbstract ch = br.connect(name, port);
 				QueueChannelAbstract queueChannel = new QueueChannel(ch);
 				// Go back to event pump thread
@@ -62,11 +68,12 @@ public class QueueBroker extends QueueBrokerAbstract {
 						listener.connected(queueChannel);
 					}
 				});
-			} catch(InterruptedException e) {
-				System.out.println("Timed out");
+				} catch(InterruptedException e) {
+					System.out.println("Timed out");
+				}
 			}
-		});
-		th.start();
+		};
+		new implems.thread_queue.Task(this.br, goToThreadedWorld);
 		return true;
 	}
 

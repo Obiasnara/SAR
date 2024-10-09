@@ -42,28 +42,29 @@ public class EventPump extends Thread {
     			switch (getTaskType(r)) {
     				case READ:
     					if (VERBOSE) System.out.println("READ");
-    					r.run();
+    					// Dont do anything
     					break;
     				case WRITE:
     					if (VERBOSE) System.out.println("WRITE");
-						r.run();
-						break;
+    					r.run();
+    					break;
     				case ACCEPT:
     					if (VERBOSE) System.out.println("ACCEPT");
-						r.run();
-						break;
+    					r.run();
+    					break;
 					case CONNECT:
 						if (VERBOSE) System.out.println("CONNECT");
 						r.run();
 						break;
 					case UNKNOWN:
 						if (VERBOSE) System.out.println("UNKNOWN");
-    					r.run();
-    					break;
+						r.run();
+						break;
 				
 				default:
 					break;
     			}
+    			
     			if (VERBOSE) System.out.println(taskQueue);
     			r = taskQueue.poll();
     		}
