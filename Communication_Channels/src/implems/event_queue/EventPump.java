@@ -42,9 +42,7 @@ public class EventPump extends Thread {
     			switch (getTaskType(r)) {
     				case READ:
     					if (VERBOSE) System.out.println("READ");
-    					Thread t = new Thread(r);
-    					t.setDaemon(true);
-    					t.start();
+    					r.run();
     					break;
     				case WRITE:
     					if (VERBOSE) System.out.println("WRITE");

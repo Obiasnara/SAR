@@ -11,6 +11,9 @@ public class ReaderTask implements Runnable {
 	public ReaderTask(ChannelAbstract connectedChannel, Listener channelListener) {
 		this.connectedChannel = connectedChannel;
 		this.channelListener = channelListener;
+		Thread t = new Thread(this);
+		t.setDaemon(true);
+		t.start();
 	}
 	
 	@Override
@@ -34,16 +37,31 @@ public class ReaderTask implements Runnable {
                 }
                 
                 if (channelListener != null) {
-                    channelListener.received(buffer);  // Notify listener when message is received
+                	Task.task().post(new Runnable() {	
+            			@Override
+            			public void run() {
+            				channelListener.received(buffer);  
+            			}
+            		});
                 }
             } catch (Exception e) {
-                // Handle interruptions or errors
-                channelListener.closed();
+            	Task.task().post(new Runnable() {	
+        			@Override
+        			public void run() {
+        				channelListener.closed(); 
+        			}
+        		});
                 break;
             }
         }
         if(channelListener != null) {
-        	channelListener.closed();
+        	Task.task().post(new Runnable() {	
+    			@Override
+    			public void run() {
+    				channelListener.closed();
+    			}
+    		});
+        	
         }
 	}
 

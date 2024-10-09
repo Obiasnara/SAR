@@ -50,7 +50,13 @@ public class QueueChannel extends QueueChannelAbstract {
 		
 		if(msg.offset != buffer.length) return false; // Next event will write more
 		
-		channelListener.sent(msg);
+		Task.task().post(new Runnable() {	
+			@Override
+			public void run() {
+				channelListener.sent(msg);
+			}
+		});
+		
 		return true;
 	}
 	

@@ -10,7 +10,7 @@ public class Task extends TaskAbstract {
     
     public static TaskAbstract task() {
          //return (TaskAbstract) Thread.currentThread();
-    	return null;
+    	return new Task();
     }
 
     @Override

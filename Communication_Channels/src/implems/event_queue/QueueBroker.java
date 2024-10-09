@@ -23,7 +23,13 @@ public class QueueBroker extends QueueBrokerAbstract {
 			try {
 				ChannelAbstract ch = br.accept(port);
 				QueueChannelAbstract queueChannel = new QueueChannel(ch);
-				listener.accepted(queueChannel);
+				Task.task().post(new Runnable() {	
+					@Override
+					public void run() {
+						listener.accepted(queueChannel);
+					}
+				});
+				
 			} catch (InterruptedException e) {
 				System.out.println("Timed out");
 			} 
@@ -49,7 +55,13 @@ public class QueueBroker extends QueueBrokerAbstract {
 			try {
 				ChannelAbstract ch = br.connect(name, port);
 				QueueChannelAbstract queueChannel = new QueueChannel(ch);
-				listener.connected(queueChannel);
+				// Go back to event pump thread
+				Task.task().post(new Runnable() {	
+					@Override
+					public void run() {
+						listener.connected(queueChannel);
+					}
+				});
 			} catch(InterruptedException e) {
 				System.out.println("Timed out");
 			}
