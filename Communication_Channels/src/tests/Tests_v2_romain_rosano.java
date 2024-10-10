@@ -10,7 +10,7 @@ import implems.BrokerManager;
 import implems.event_queue.QueueBroker;
 
 
-public class tests_v2_romain_rosano {
+public class Tests_v2_romain_rosano {
 	public static void main(String[] args) {
 		try {
 			BrokerManager.getInstance().removeAllBrokers();

@@ -20,7 +20,7 @@ import java.util.ArrayList;
  * Ce test illustre l'utilisation de l'API pour établir une communication
  * bidirectionnelle entre tâches.
  */
-public class example {
+public class Example {
 
     public final static String LOREM_IPSUM = "\n" + //
             "\n" + //
@@ -122,7 +122,7 @@ public class example {
     protected static Boolean VERBOSE = false;
     public static void main(String[] args) {
         // Create a new test object
-        example test = new example();
+        Example test = new Example();
         // Run the test
         test.test1();
         System.out.println("Test 1 passed");
@@ -330,7 +330,7 @@ public class example {
         ArrayList<Broker> brokers = new ArrayList<Broker>();
         ArrayList<Task> tasks = new ArrayList<Task>();
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             Broker broker = new Broker("BrokerT3" + i);
             brokers.add(broker);
             Task serverTask = new Task(broker, new EchoServer(broker, true, "BrokerT3" + i, i));

@@ -35,7 +35,7 @@ public class QueueChannel extends QueueChannelAbstract {
 	public void setListener(Listener l) {
 		// TODO Auto-generated method stub
 		this.channelListener = l;
-		EventPump.getInstance().post(new ReaderTask(connectedChannel, l));
+		Task.task().post(new ReaderTask(connectedChannel, l));
 	}
 
 	@Override
@@ -53,12 +53,14 @@ public class QueueChannel extends QueueChannelAbstract {
 					// 	We'll write what we can for now
 					msg.offset += connectedChannel.write(buffer, msg.offset, buffer.length - msg.offset);
 				}
-				Task.task().post(new Runnable() {	
-					@Override
-					public void run() {
-						channelListener.sent(msg);
-					}
-				});
+				if(channelListener != null) {
+					Task.task().post(new Runnable() {	
+						@Override
+						public void run() {
+							channelListener.sent(msg);
+						}
+					});
+				}
 			}
 		};
 		
@@ -72,7 +74,7 @@ public class QueueChannel extends QueueChannelAbstract {
 	@Override
 	public void close() {
 		connectedChannel.disconnect();
-		channelListener.closed();
+		if(channelListener != null) channelListener.closed();
 		isClosed = true;
 		channelListener = null;
 	}

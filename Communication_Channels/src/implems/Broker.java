@@ -2,6 +2,7 @@ package implems;
 
 import abstracts.BrokerAbstract;
 import abstracts.ChannelAbstract;
+import implems.event_queue.errors.ConnectionRefused;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -21,42 +22,37 @@ public class Broker extends BrokerAbstract {
 	private String name;
 	protected static final int BUFFER_SIZE = 10;
 	
-	public final ConcurrentHashMap<Integer, LinkedList<RDV>> requestList = new ConcurrentHashMap<Integer, LinkedList<RDV>>();
+	public final ConcurrentHashMap<Integer, RDV> requestList = new ConcurrentHashMap<Integer, RDV>();
 
 
 	protected class RDV {
 		private CircularBuffer buffIn;
 		private CircularBuffer buffOut;
 		private AtomicBoolean disconnected = new AtomicBoolean(false);
-		private CountDownLatch latch = new CountDownLatch(2);
-		private static final long TIMEOUT = 5; // Timeout in seconds
+		private boolean acceptLatch = false;
+		private boolean connectLatch = false;
 		
 		private RDV() {
 			this.buffIn = new CircularBuffer(BUFFER_SIZE);
 			this.buffOut = new CircularBuffer(BUFFER_SIZE);
 		}
 
-		protected ChannelAbstract accept() throws InterruptedException {
-			latch.countDown();
-
-			try {
-				latch.await(TIMEOUT, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+		protected ChannelAbstract accept() throws InterruptedException, ConnectionRefused {
+			if(acceptLatch) throw new ConnectionRefused();
+			acceptLatch = true;
+			synchronized (this) {
+				if(!connectLatch) { wait(); } else notify();
 			}
-
 			return new Channel(buffOut, buffIn, disconnected);
 		}
 
-		protected ChannelAbstract connect() throws InterruptedException {
-			latch.countDown();
-
-			try {
-				latch.await(TIMEOUT, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+		protected ChannelAbstract connect() throws InterruptedException, ConnectionRefused{
+			if (connectLatch) throw new ConnectionRefused();
+			connectLatch = true;
+			synchronized (this) {				
+				if(!acceptLatch) { wait(); } else notify();
 			}
-
+			
 			return new Channel(buffIn, buffOut, disconnected);
 		}
 	}
@@ -69,44 +65,39 @@ public class Broker extends BrokerAbstract {
 	}
 
 	@Override
-	public ChannelAbstract accept(int port) throws InterruptedException {
+	public ChannelAbstract accept(int port) throws ConnectionRefused, InterruptedException {
 		RDV rdv;
 		synchronized (requestList) {
-			requestList.computeIfAbsent(port, k -> new LinkedList<>());
-			LinkedList<RDV> queue = requestList.get(port);
+			rdv = requestList.get(port);
 			
-			rdv = queue.peek();
 			if(rdv == null) {
 				rdv = new RDV();
-				queue.add(rdv);     
-			}
+				requestList.put(port, rdv);     
+			}	
 		}
 		return rdv.accept(); 
 	}
 
 
 	@Override
-	public ChannelAbstract connect(String name, int port) throws InterruptedException {
+	public ChannelAbstract connect(String name, int port) throws ConnectionRefused, InterruptedException {
+		RDV rdv;
 		if (this.name.equals(name)) {
-			RDV rdv;
 			synchronized (requestList) {
-				requestList.computeIfAbsent(port, k -> new LinkedList<>());
-				LinkedList<RDV> queue = requestList.get(port);
+				rdv = requestList.get(port);
 				
-				rdv = queue.peek();
 				if(rdv == null) {
 					rdv = new RDV();
-					queue.add(rdv);     
-				}
+					requestList.put(port, rdv);     
+				}	
 			}
-
 			return rdv.connect();  // Return the channel after connect
 		}
 
 		// External broker logic (unchanged)
 		BrokerAbstract brokerFoundOnNetwork = BrokerManager.getInstance().getBroker(name);
 		if (brokerFoundOnNetwork == null) {
-			return null;
+			throw new ConnectionRefused();
 		}
 		return brokerFoundOnNetwork.connect(name, port);
 	}

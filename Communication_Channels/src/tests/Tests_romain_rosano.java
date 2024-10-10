@@ -6,7 +6,7 @@ import implems.BrokerManager;
 import implems.thread_queue.QueueBroker;
 import implems.thread_queue.Task;
 
-public class tests_romain_rosano {
+public class Tests_romain_rosano {
 
     protected static final String CLIENT_MESSAGE = "\n" + //
             "\n" + //

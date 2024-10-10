@@ -23,7 +23,7 @@ public class Task extends TaskAbstract {
         this.broker = b;
         this.runnable = r;
     
-        this.thread = new Thread(this.runnable);
+        this.thread = new Thread(this.runnable, "TASK_THREAD");
         this.thread.start();
     }
 	

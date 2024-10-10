@@ -4,6 +4,7 @@ import abstracts.ChannelAbstract;
 import abstracts.thread_queue.QueueBrokerAbstract;
 import abstracts.thread_queue.QueueChannelAbstract;
 import implems.Broker;
+import implems.event_queue.errors.ConnectionRefused;
 
 public class QueueBroker extends QueueBrokerAbstract {
     
@@ -21,6 +22,9 @@ public class QueueBroker extends QueueBrokerAbstract {
 			chan = br.accept(port);
 		} catch (InterruptedException e) {
 			System.err.println("This behaviour emerged with event_queue, a Task has 5s to connect or accept");
+		} catch (ConnectionRefused e) {
+			
+			System.err.println("The accept was refused by the Broker");
 		}
     	return new QueueChannel(chan);
     }
@@ -31,6 +35,9 @@ public class QueueBroker extends QueueBrokerAbstract {
 			chan = br.connect(name, port);
 		} catch (InterruptedException e) {
 			System.err.println("This behaviour emerged with event_queue, a Task has 5s to connect or accept");
+		} catch (ConnectionRefused e) {
+			// TODO Auto-generated catch block
+			System.err.println("The connect was refused by the Broker");
 		}
     	return new QueueChannel(chan);
     }

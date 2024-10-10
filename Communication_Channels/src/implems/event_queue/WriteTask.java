@@ -14,6 +14,6 @@ public class WriteTask implements Runnable {
 
 	@Override
 	public void run() {
-		if (!this.queue.send(msg) && !this.queue.closed()) EventPump.getInstance().post(this);
+		if (!this.queue.send(msg) && !this.queue.closed()) Task.task().post(this);
 	}
 }

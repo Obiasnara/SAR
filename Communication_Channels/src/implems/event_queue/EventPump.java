@@ -3,10 +3,13 @@ package implems.event_queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import abstracts.event_queue.TaskAbstract;
+import implems.event_queue.Task.EventToPublish;
+
 public class EventPump extends Thread {
 
     private static EventPump instance;
-    private final BlockingQueue<Runnable> taskQueue;
+    private final BlockingQueue<EventToPublish> taskQueue;
     private boolean running;
     // Private constructor to prevent instantiation
     private EventPump() {
@@ -22,43 +25,49 @@ public class EventPump extends Thread {
         CONNECT, ACCEPT, READ, WRITE, UNKNOWN
     }
 
-    public TaskType getTaskType(Runnable r) {
-        if (r instanceof ReaderTask) return TaskType.READ;
-        if (r instanceof WriteTask) return TaskType.WRITE;
-        if (r instanceof AcceptTask) return TaskType.ACCEPT;
-        if (r instanceof ConnectTask) return TaskType.CONNECT;
+    public TaskType getTaskType(EventToPublish r) {
+        if (r.r instanceof ReaderTask) return TaskType.READ;
+        if (r.r instanceof WriteTask) return TaskType.WRITE;
+        if (r.r instanceof AcceptTask) return TaskType.ACCEPT;
+        if (r.r instanceof ConnectTask) return TaskType.CONNECT;
         
         return TaskType.UNKNOWN;
+    }
+    
+    private EventToPublish currentEvent;
+    public TaskAbstract getCurrentTask() {
+    	if (this.currentEvent == null) return null; 
+    	return currentEvent.src;
     }
     
     protected final boolean VERBOSE = false;
     
     public synchronized void run() {
-    	Runnable r;
+    	
     	while(running) {
     		if (VERBOSE) System.out.println(taskQueue);
-    		r = taskQueue.poll();
-    		while(r!=null) {
-    			switch (getTaskType(r)) {
+    		currentEvent = taskQueue.poll();
+    		while(currentEvent!=null) {
+    			switch (getTaskType(currentEvent)) {
     				case READ:
     					if (VERBOSE) System.out.println("READ");
     					// Dont do anything
     					break;
     				case WRITE:
     					if (VERBOSE) System.out.println("WRITE");
-    					r.run();
+    					currentEvent.r.run();
     					break;
     				case ACCEPT:
     					if (VERBOSE) System.out.println("ACCEPT");
-    					r.run();
+    					currentEvent.r.run();
     					break;
 					case CONNECT:
 						if (VERBOSE) System.out.println("CONNECT");
-						r.run();
+						currentEvent.r.run();
 						break;
 					case UNKNOWN:
 						if (VERBOSE) System.out.println("UNKNOWN");
-						r.run();
+						currentEvent.run();
 						break;
 				
 				default:
@@ -66,7 +75,7 @@ public class EventPump extends Thread {
     			}
     			
     			if (VERBOSE) System.out.println(taskQueue);
-    			r = taskQueue.poll();
+    			currentEvent = taskQueue.poll();
     		}
     		sleep();
     	}
@@ -81,12 +90,12 @@ public class EventPump extends Thread {
     }
     
     // Removes a task from the queue
-    public boolean remove(Runnable task) {
+    public boolean remove(EventToPublish task) {
         return taskQueue.remove(task);
     }
 
     // Posts a task to the queue
-    public synchronized void  post(Runnable task) {
+    public synchronized void  post(EventToPublish task) {
     	if(!running) return; // Silently drop
         taskQueue.offer(task);
         notify();

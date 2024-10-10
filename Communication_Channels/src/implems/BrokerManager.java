@@ -8,7 +8,7 @@ public class BrokerManager {
     private static final BrokerManager instance;
 
     // Map enabling the association of the broker name with the broker object
-    private final HashMap<String, BrokerAbstract> brokers;
+    public final HashMap<String, BrokerAbstract> brokers;
 
     // Runs on class loading from the JVM
     static {

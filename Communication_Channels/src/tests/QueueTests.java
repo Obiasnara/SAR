@@ -8,7 +8,7 @@ import implems.thread_queue.Task;
 
 import java.nio.charset.StandardCharsets;
 
-public class queueTests {
+public class QueueTests {
 	    
     private void validate(byte[] echoBuffer, String message) {
         if(echoBuffer == null) System.err.println("echoBuffer is null, but it shouldn't be.");
@@ -18,7 +18,7 @@ public class queueTests {
     protected static Boolean VERBOSE = false;
     public static void main(String[] args) {
         // Create a new test object
-        queueTests test = new queueTests();
+        QueueTests test = new QueueTests();
         // Run the test
         test.test1();
         

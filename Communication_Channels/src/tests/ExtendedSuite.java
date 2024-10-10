@@ -12,11 +12,11 @@ import implems.BrokerManager;
 import implems.event_queue.*;
 
 
-public class extendedSuite {
+public class ExtendedSuite {
 
 	public static void main(String[] args) {
 		try {
-			extendedSuite e = new extendedSuite();
+			ExtendedSuite e = new ExtendedSuite();
 			EventPump.getInstance().start();
 						
 			e.testBasicConnection();

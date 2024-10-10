@@ -7,13 +7,13 @@ import abstracts.event_queue.QueueChannelAbstract.Listener;
 import abstracts.event_queue.TaskAbstract;
 import implems.event_queue.*;
 
-public class eventTest {
+public class EventTest {
 
 	protected QueueBroker queueBroker;
 	
 	public static void main(String[] args) {
 		EventPump.getInstance().start();
-		eventTest evt = new eventTest();
+		EventTest evt = new EventTest();
 		evt.test1();
 	}
 	
