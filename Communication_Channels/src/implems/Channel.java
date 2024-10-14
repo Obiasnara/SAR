@@ -115,9 +115,16 @@ public class Channel extends ChannelAbstract {
 	// Here we have a disconnect method that sets the localDisconnected flag to true 
 	// we donc care about the local one as we wont be able to read or write anymore
 	@Override
-	public void disconnect() {
+	public synchronized void disconnect() {
 		localDisconnected = true;
 		remoteDisconnected.set(true);
+		
+		synchronized (buffIn) {
+			buffIn.notify();
+		}
+		synchronized (buffOut) {
+			buffOut.notify();
+		}
 	}
 
 	// If any of the two sides is disconnected, the channel is disconnected

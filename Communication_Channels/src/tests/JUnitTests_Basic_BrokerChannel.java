@@ -399,7 +399,7 @@ public class JUnitTests_Basic_BrokerChannel {
                     while (nbMessages < 10) {
                         String message = brokerName + " message number " + nbMessages;
                         writeSizeAndMessage(serverChannel, message.getBytes());
-
+                        
                         byte[] echoBuffer = readSizeAndMessage(serverChannel);
                         
                         assertEquals(new String(echoBuffer), message);
@@ -408,8 +408,6 @@ public class JUnitTests_Basic_BrokerChannel {
                     }
                     
                 }
-
-                
             } catch (Exception e) {
                 fail("Unexpected exception in EchoServer: " + e.getMessage());
             }

@@ -1,6 +1,7 @@
 package implems.event_queue;
 
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
 import abstracts.ChannelAbstract;
 import abstracts.event_queue.QueueChannelAbstract;
@@ -35,8 +36,9 @@ public class QueueChannel extends QueueChannelAbstract {
 	public void setListener(Listener l) {
 		// TODO Auto-generated method stub
 		this.channelListener = l;
-		Task.task().post(new ReaderTask(connectedChannel, l));
+		Task.task().post(new ReaderTask(this, connectedChannel, l));		
 	}
+	
 
 	@Override
 	public boolean send(Message msg) {
@@ -53,13 +55,15 @@ public class QueueChannel extends QueueChannelAbstract {
 					// 	We'll write what we can for now
 					msg.offset += connectedChannel.write(buffer, msg.offset, buffer.length - msg.offset);
 				}
-				if(channelListener != null) {
-					Task.task().post(new Runnable() {	
-						@Override
-						public void run() {
-							channelListener.sent(msg);
-						}
-					});
+				synchronized (channelListener) {
+					if(channelListener != null) {
+						Task.task().post(new Runnable() {	
+							@Override
+							public void run() {
+								channelListener.sent(msg);
+							}
+						});
+					}
 				}
 			}
 		};
@@ -74,7 +78,6 @@ public class QueueChannel extends QueueChannelAbstract {
 	@Override
 	public void close() {
 		connectedChannel.disconnect();
-		if(channelListener != null) channelListener.closed();
 		isClosed = true;
 		channelListener = null;
 	}

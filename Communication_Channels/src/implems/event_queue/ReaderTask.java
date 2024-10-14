@@ -7,9 +7,11 @@ public class ReaderTask implements Runnable {
 
 	ChannelAbstract connectedChannel;
 	Listener channelListener;
+	QueueChannel queueChannel;
 	
-	public ReaderTask(ChannelAbstract connectedChannel, Listener channelListener) {
+	public ReaderTask(QueueChannel qch, ChannelAbstract connectedChannel, Listener channelListener) {
 		this.connectedChannel = connectedChannel;
+		this.queueChannel= qch;
 		this.channelListener = channelListener;
 		Thread t = new implems.thread_queue.Task(this);
 		t.setDaemon(true);
@@ -42,26 +44,22 @@ public class ReaderTask implements Runnable {
             				channelListener.received(buffer);  
             			}
             		});
+                } else {
+                	System.err.println("This behaviour is weird, listener is null");
                 }
             } catch (Exception e) {
-            	Task.task().post(new Runnable() {	
-        			@Override
-        			public void run() {
-        				channelListener.closed(); 
-        			}
-        		});
                 break;
             }
         }
-        if(channelListener != null) {
-        	Task.task().post(new Runnable() {	
-    			@Override
-    			public void run() {
-    				channelListener.closed();
-    			}
-    		});
+       
+    	Task.task().post(new Runnable() {	
+			@Override
+			public void run() {
+				channelListener.closed();
+			}
+		});
         	
-        }
+        
 	}
 
 	

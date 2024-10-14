@@ -9,6 +9,7 @@ public class Task extends TaskAbstract {
     public QueueChannel queue;
     
     protected class EventToPublish {
+    	
     	TaskAbstract src; TaskAbstract dst; Runnable r;
     	public EventToPublish(TaskAbstract src, TaskAbstract dst, Runnable r) {
     		this.src = src; this.dst = dst; this.r = r;

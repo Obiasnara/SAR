@@ -57,8 +57,6 @@ public class QueueBroker extends QueueBrokerAbstract {
 	public boolean connect(String name, int port, ConnectListener listener) {
 		if(listener == null) throw new IllegalStateException("Connect listener can't be null");
 		if (!BrokerManager.getInstance().brokerExists(name)) {
-			BrokerManager.getInstance().brokerExists(name);
-			BrokerManager.getInstance();
 			listener.refused();
 			return false;
 		} 

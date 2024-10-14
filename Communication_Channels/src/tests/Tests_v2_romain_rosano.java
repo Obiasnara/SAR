@@ -7,11 +7,13 @@ import abstracts.event_queue.QueueBrokerAbstract.AcceptListener;
 import abstracts.event_queue.QueueBrokerAbstract.ConnectListener;
 import abstracts.event_queue.QueueChannelAbstract;
 import implems.BrokerManager;
+import implems.event_queue.EventPump;
 import implems.event_queue.QueueBroker;
 
 
 public class Tests_v2_romain_rosano {
 	public static void main(String[] args) {
+		EventPump.getInstance().start();
 		try {
 			BrokerManager.getInstance().removeAllBrokers();
 			test1();
@@ -47,6 +49,7 @@ public class Tests_v2_romain_rosano {
 			@Override
 			public void connected(QueueChannelAbstract queue) {
 				// TODO Auto-generated method stub
+				System.out.println("Connected");
 				
 			}
 		});
@@ -55,7 +58,8 @@ public class Tests_v2_romain_rosano {
 			@Override
 			public void accepted(QueueChannelAbstract queue) {
 				// TODO Auto-generated method stub
-				
+				System.out.println("Accepted");
+				sm.release();
 			}
 		});
 
@@ -73,7 +77,7 @@ public class Tests_v2_romain_rosano {
 			@Override
 			public void connected(QueueChannelAbstract queue) {
 				// TODO Auto-generated method stub
-				
+				sm.release();
 			}
 		});
 	}
@@ -98,8 +102,8 @@ public class Tests_v2_romain_rosano {
 		for (int i = 0; i < nbre_clients; i++) {
 			QueueBroker client = new QueueBroker("client" + i);
 			echo_client(client, connection_port, sm);
-			echo_server(server, connection_port);
 		}
+		echo_server(server, connection_port);
 
 		sm.acquire(); // Waits the end of the test
 		System.out.println("Test 2." + test_number + " done !\n");
