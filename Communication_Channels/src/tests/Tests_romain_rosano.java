@@ -1,10 +1,10 @@
 package tests;
 
-import abstracts.thread_queue.QueueBrokerAbstract;
-import abstracts.thread_queue.QueueChannelAbstract;
-import implems.BrokerManager;
-import implems.thread_queue.QueueBroker;
-import implems.thread_queue.Task;
+import task1.implems.BrokerManager;
+import task2.abstracts.thread_queue.QueueBrokerAbstract;
+import task2.abstracts.thread_queue.QueueChannelAbstract;
+import task2.implems.thread_queue.QueueBroker;
+import task2.implems.thread_queue.Task;
 
 public class Tests_romain_rosano {
 

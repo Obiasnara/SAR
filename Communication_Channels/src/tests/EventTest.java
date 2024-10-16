@@ -1,11 +1,11 @@
 package tests;
 
-import abstracts.event_queue.QueueBrokerAbstract.AcceptListener;
-import abstracts.event_queue.QueueBrokerAbstract.ConnectListener;
-import abstracts.event_queue.QueueChannelAbstract;
-import abstracts.event_queue.QueueChannelAbstract.Listener;
-import abstracts.event_queue.TaskAbstract;
-import implems.event_queue.*;
+import task3.abstracts.event_queue.QueueChannelAbstract;
+import task3.abstracts.event_queue.TaskAbstract;
+import task3.abstracts.event_queue.QueueBrokerAbstract.AcceptListener;
+import task3.abstracts.event_queue.QueueBrokerAbstract.ConnectListener;
+import task3.abstracts.event_queue.QueueChannelAbstract.Listener;
+import task3.implems.event_queue.*;
 
 public class EventTest {
 

@@ -3,12 +3,12 @@ package tests;
 
 import java.util.concurrent.Semaphore;
 
-import abstracts.event_queue.QueueBrokerAbstract.AcceptListener;
-import abstracts.event_queue.QueueBrokerAbstract.ConnectListener;
-import abstracts.event_queue.QueueChannelAbstract;
-import implems.BrokerManager;
-import implems.event_queue.EventPump;
-import implems.event_queue.QueueBroker;
+import task1.implems.BrokerManager;
+import task3.abstracts.event_queue.QueueChannelAbstract;
+import task3.abstracts.event_queue.QueueBrokerAbstract.AcceptListener;
+import task3.abstracts.event_queue.QueueBrokerAbstract.ConnectListener;
+import task3.implems.event_queue.EventPump;
+import task3.implems.event_queue.QueueBroker;
 
 
 public class Tests_v2_romain_rosano {

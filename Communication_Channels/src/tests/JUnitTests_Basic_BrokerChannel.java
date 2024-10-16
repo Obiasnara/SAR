@@ -16,10 +16,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
-import implems.Broker;
-import implems.BrokerManager;
-import implems.Channel;
-import implems.event_queue.errors.ConnectionRefused;
+
+import task1.implems.Broker;
+import task1.implems.BrokerManager;
+import task1.implems.Channel;
+import task3.implems.event_queue.errors.ConnectionRefused;
 
 public class JUnitTests_Basic_BrokerChannel {
 	
