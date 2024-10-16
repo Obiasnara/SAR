@@ -1,4 +1,4 @@
-package tests;
+package tests.task3;
 
 import task1.implems.BrokerManager;
 import task3.abstracts.event_queue.QueueChannelAbstract;

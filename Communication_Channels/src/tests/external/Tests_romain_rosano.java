@@ -1,4 +1,4 @@
-package tests;
+package tests.external;
 
 import task1.implems.BrokerManager;
 import task2.abstracts.thread_queue.QueueBrokerAbstract;
