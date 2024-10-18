@@ -1,38 +1,78 @@
 package task4.implems;
 
-import task4.abstracts.AcceptListenerAbstract;
 import task4.abstracts.BrokerAbstract;
-import task4.abstracts.ConnectListenerAbstract;
+import task4.abstracts.ChannelAbstract;
 import task4.abstracts.Listener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import task3.abstracts.event_queue.QueueChannelAbstract;
+
 
 public class Broker extends BrokerAbstract {
 
+	public interface AcceptListener {
+		void accepted(ChannelAbstract queue);
+	}
+	public interface ConnectListener {
+		void refused();
+		void connected(ChannelAbstract queue);
+	}
 	private String name;
 	protected static final int BUFFER_SIZE = 10;
 	
 	protected HashMap<Integer, Request> acceptEvents = new HashMap<Integer, Request>();
 	protected HashMap<Integer, ArrayList<Request>> connectEvents = new HashMap<Integer, ArrayList<Request>>();
 	
-	class Request {
+	class Request implements Runnable {
 		int port;
 		String name;
-		Listener l;
+		ConnectListener cl;
+		AcceptListener al;
+		boolean isAccept;
 		
-		public Request(int port, Listener l) {
-			this.port = port; this.l = l;
-			this.processRequest();
+		protected static final int MAX_RETRIES = 10;
+		int connectionTries;
+
+		public Request(int port, AcceptListener l) {
+			this.port = port; this.al = l;
+			Task.task().post(this);
 		}
-		public Request(int port, String name, Listener l) {
-			this.port = port; this.name = name; this.l = l;
-			this.processRequest();
+		public Request(int port, String name, ConnectListener l) {
+			this.port = port; this.name = name; this.cl = l; this.connectionTries = 0;
 		}
 		
-		public void processRequest() {
-			// TODO add a runnable here
+		 @Override
+	    public void run() {
+			ArrayList<Request> connect_request = connectEvents.get(this.port);
+			if(connect_request == null || connect_request.size() == 0) {
+				Task.task().post(this);
+				return;
+			}
+			
+			// Someone is asking for a connection so we handle him
+			CircularBuffer cb_in = new CircularBuffer(BUFFER_SIZE);
+			CircularBuffer cb_out = new CircularBuffer(BUFFER_SIZE);
+			
+			AtomicBoolean disconnect_monitoring = new AtomicBoolean(false);
+			
+			Channel connect_channel = new Channel(cb_in, cb_out, disconnect_monitoring);
+			
+			ConnectListener connect_listener = connect_request.remove(0).cl;
+			
+			connect_listener.connected(connect_channel);
+			
+			// Then we handle ourselves
+			cb_in = new CircularBuffer(BUFFER_SIZE);
+			cb_out = new CircularBuffer(BUFFER_SIZE);
+			
+			disconnect_monitoring = new AtomicBoolean(false);
+			
+			Channel accept_channel = new Channel(cb_in, cb_out, disconnect_monitoring);
+			
+			this.al.accepted(accept_channel);
 		}
 	}
 	
@@ -43,7 +83,7 @@ public class Broker extends BrokerAbstract {
 	}
 
 	@Override
-	public boolean accept(int port, AcceptListenerAbstract acl) {
+	public boolean accept(int port, AcceptListener acl) {
 		// Already accepting on the port
 		if(this.acceptEvents.containsKey(port)) return false;
 		
@@ -53,12 +93,12 @@ public class Broker extends BrokerAbstract {
 
 
 	@Override
-	public boolean connect(String name, int port, ConnectListenerAbstract cnl) {
+	public boolean connect(int port, String name, ConnectListener cnl) {
 		if(this.name != name) {
 			BrokerAbstract b = BrokerManager.getInstance().getBroker(name);
 			// Signal to the user the action cannot be performed 
 			if (b == null) return false;  
-			b.connect(name, port, cnl);
+			b.connect(port, name, cnl);
 			return true;
 		}
 		

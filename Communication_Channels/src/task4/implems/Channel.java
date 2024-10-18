@@ -3,7 +3,7 @@ package task4.implems;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import task1.abstracts.ChannelAbstract;
+import task4.abstracts.ChannelAbstract;
 
 public class Channel extends ChannelAbstract {
 
