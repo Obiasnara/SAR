@@ -19,6 +19,7 @@ public class Broker extends BrokerAbstract {
 	public interface ConnectListener {
 		void refused();
 		void connected(ChannelAbstract queue);
+		void disconnected();
 	}
 	private String name;
 	protected static final int BUFFER_SIZE = 10;
@@ -32,6 +33,9 @@ public class Broker extends BrokerAbstract {
 		ConnectListener cl;
 		AcceptListener al;
 		boolean isAccept;
+		
+		CircularBuffer cb_in;
+		CircularBuffer cb_out;
 		
 		protected static final int MAX_RETRIES = 10;
 		int connectionTries;
@@ -48,31 +52,33 @@ public class Broker extends BrokerAbstract {
 	    public void run() {
 			ArrayList<Request> connect_request = connectEvents.get(this.port);
 			if(connect_request == null || connect_request.size() == 0) {
-				Task.task().post(this);
+				Task.task().post(this, "Accepting Process on port " + this.port);
 				return;
 			}
 			
+			
 			// Someone is asking for a connection so we handle him
-			CircularBuffer cb_in = new CircularBuffer(BUFFER_SIZE);
-			CircularBuffer cb_out = new CircularBuffer(BUFFER_SIZE);
+			CircularBuffer connect_cb_in = new CircularBuffer(BUFFER_SIZE);
+			CircularBuffer connect_cb_out = new CircularBuffer(BUFFER_SIZE);
 			
 			AtomicBoolean disconnect_monitoring = new AtomicBoolean(false);
 			
-			Channel connect_channel = new Channel(cb_in, cb_out, disconnect_monitoring);
+			Channel connect_channel = new Channel(connect_cb_in, connect_cb_out, disconnect_monitoring);
 			
 			ConnectListener connect_listener = connect_request.remove(0).cl;
 			
-			connect_listener.connected(connect_channel);
+			Task.task().post(() -> connect_listener.connected(connect_channel), "Connected Event");
+			
 			
 			// Then we handle ourselves
-			cb_in = new CircularBuffer(BUFFER_SIZE);
-			cb_out = new CircularBuffer(BUFFER_SIZE);
+			this.cb_in = new CircularBuffer(BUFFER_SIZE);
+			this.cb_out = new CircularBuffer(BUFFER_SIZE);
 			
 			disconnect_monitoring = new AtomicBoolean(false);
 			
 			Channel accept_channel = new Channel(cb_in, cb_out, disconnect_monitoring);
 			
-			this.al.accepted(accept_channel);
+			Task.task().post(() -> this.al.accepted(accept_channel), "Accepted Event");
 		}
 	}
 	
@@ -97,9 +103,12 @@ public class Broker extends BrokerAbstract {
 		if(this.name != name) {
 			BrokerAbstract b = BrokerManager.getInstance().getBroker(name);
 			// Signal to the user the action cannot be performed 
-			if (b == null) return false;  
-			b.connect(port, name, cnl);
-			return true;
+			if (b == null) {
+				Task.task().post(() -> cnl.refused(), "Refused Event");
+				return false;  
+			}
+			
+			return b.connect(port, name, cnl); 
 		}
 		
 		ArrayList<Request> listOfRequests = this.connectEvents.get(port);
@@ -110,6 +119,33 @@ public class Broker extends BrokerAbstract {
 		this.connectEvents.put(port, listOfRequests);
 		
 		return true;
+	}
+	
+	public boolean disconnect(int port, String name, ConnectListener cnl) {
+		
+		// Dispatch to the right broker
+		if(this.name != name) {
+			BrokerAbstract b = BrokerManager.getInstance().getBroker(name);
+			// Signal to the user the action cannot be performed 
+			if (b == null) {
+				return false;  
+			}
+			
+			return b.disconnect(port, name, cnl); 
+		}
+		
+		// Check if we have an actual accept
+		Request accept_request = acceptEvents.get(port);
+		if (accept_request == null) return false;
+		
+		// Send disconnected event
+		Task.task().post(() -> cnl.disconnected(), "Disconnect Event");
+		// Restart the connection seek process on that specific port
+		Task.task().post(accept_request, "Accepting Process on port " + accept_request.port);
+		
+		return true;
+		
+		
 	}
 
 }
