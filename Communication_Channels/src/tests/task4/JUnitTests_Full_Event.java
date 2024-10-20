@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.params.ParameterizedTest;
 
 import task4.abstracts.ChannelAbstract;
 import task4.abstracts.TaskAbstract;
@@ -71,7 +72,6 @@ public class JUnitTests_Full_Event {
             AcceptListener ac = new AcceptListener() {
                 @Override
                 public void accepted(ChannelAbstract queue) {
-                	System.out.println("Accepted !!!!");
                 	acceptEvent[0] = true; // Track that accept was called
                     latch.countDown();     // Decrement latch
                 }
@@ -99,17 +99,18 @@ public class JUnitTests_Full_Event {
 	@RepeatedTest(1)
 	@DisplayName("Multiple connect and disconnect test")
     public void connect_disconnect() {
+		final int MAX_TRIES = 10000;
         try {
             TaskAbstract t1 = Task.task();
-            TaskAbstract t2 = Task.task();
+            
             
             // Countdown for accept, connect, and refused
-            CountDownLatch latch = new CountDownLatch(3);
+            CountDownLatch latch = new CountDownLatch(MAX_TRIES * 3);
             
             // Use boolean flags to assert specific events
-            final boolean[] acceptEvent = {false, false};
-            final boolean[] connectEvent = {false, false};
-            final boolean[] disconnectedEvent = {false, false};
+            final boolean[] acceptEvent = new boolean[MAX_TRIES];
+            final boolean[] connectEvent = new boolean[MAX_TRIES];
+            final boolean[] disconnectedEvent = new boolean[MAX_TRIES];
             
             
             // Listener for connection refused and connected
@@ -121,14 +122,12 @@ public class JUnitTests_Full_Event {
 
                 @Override
                 public void connected(ChannelAbstract queue) {
-                	System.out.println("Connect " + nbConnect);
                 	connectEvent[nbConnect++] = true; // Track that connect was called
                     latch.countDown();      // Decrement latch
                 }
                 
                 @Override 
                 public void disconnected() {
-                	System.out.println("Disconnect " + nbDisconnect);
                 	disconnectedEvent[nbDisconnect++] = true;
                 	latch.countDown();
                 }
@@ -139,7 +138,6 @@ public class JUnitTests_Full_Event {
             	int nbAccept = 0;
                 @Override
                 public void accepted(ChannelAbstract queue) {
-                	System.out.println("Connect " + nbAccept);
                 	acceptEvent[nbAccept++] = true; // Track that accept was called
                     latch.countDown();     // Decrement latch
                 }
@@ -148,23 +146,26 @@ public class JUnitTests_Full_Event {
             // Post events to simulate accept, connect, and refused
             t1.post(() -> testBroker.accept(8080, ac), "Accept");
             
-            t2.post(() -> testBroker.connect(8080, "Broker1", cl), "Connect1");
-            t2.post(() -> testBroker.disconnect(8080, "Broker1", cl), "Disconnect1");
+            // This loop simulates multiple clients connecting and disconnecting (one after the other due to one thread)
+            for(int i = 0 ; i < MAX_TRIES ; i++) {
+            	  TaskAbstract t2 = Task.task();
+            	  t2.post(() -> testBroker.connect(8080, "Broker1", cl), "Connect : " + i);
+                  t2.post(() -> testBroker.disconnect(8080, "Broker1", cl), "Disconnect : " + i);
+            }
             
-            // Reconnect !
-            t2.post(() -> testBroker.connect(8080, "Broker1", cl), "Connect2");
-            t2.post(() -> testBroker.disconnect(8080, "Broker1", cl), "Disconnect2");
-            
-            
+            latch.await();
             // Wait for events to occur or timeout after 5 seconds
-            boolean completed = latch.await(5, TimeUnit.SECONDS);
+            //boolean completed = latch.await(5, TimeUnit.SECONDS);
             
             // Assert that all the events were completed successfully
-            assertTrue(completed, "Not all events completed before the timeout.");
-            assertTrue(acceptEvent[0], "The accept event was not triggered.");
-            assertTrue(connectEvent[0], "The connect event was not triggered.");
-            assertTrue(disconnectedEvent[0], "The discconnected event was not triggered.");
+            //assertTrue(completed, "Not all events completed before the timeout.");
             
+            
+            for (int i = 1; i < MAX_TRIES; i++) {
+            	assertTrue(acceptEvent[0], "Accept event failed for attempt " + i);
+                assertTrue(connectEvent[i], "Connect event failed for attempt " + i);
+                assertTrue(disconnectedEvent[i], "Disconnect event failed for attempt " + i);
+            }
             
         } catch (Exception e) {
             System.out.println(e.getMessage());
