@@ -37,3 +37,20 @@ REPEAT {
 ## The new Channel
 
 Nothing for now.
+
+abstract class Channel {
+  Interface ReadListener {
+    void read(byte[] bytes);
+  }
+
+  Interface WriteListener {
+    void available(int length);
+    void written();
+  }
+
+  void setListener(ReadListener listener);
+  boolean read(byte[] bytes, int offset, int length);
+  boolean write(byte[] bytes, int offset, int length, WriteListener listener);
+  void disconnect();
+  boolean disconnected();
+}

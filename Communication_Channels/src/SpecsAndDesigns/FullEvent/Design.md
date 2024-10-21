@@ -20,52 +20,14 @@ When a connect is dispatched, the broker will create a connectRequest object. Th
 
 I tested the broker with the following scenarios:
 
-#### Scenario 1:
+#### Scenario :
 
 ```
-- A accept is called on a port (the broker is listening)
 REPEAT {
-- A connect is called on a port (creating the channels)
-- A disconnect is called on the same port (the broker is listening again)
-} UNTIL 10000 times
-```
-
-#### Scenario 2:
-
-```
 - A accept is called on a port (the broker is listening)
-REPEAT {
 - A connect is called on a port (creating the channels)
-- A disconnect is called on the same port (the broker is listening again)
-} UNTIL 100000 times
+} UNTIL XXX times
 ```
-
-#### Scenario 3:
-
-```
-- A accept is called on a port (the broker is listening)
-REPEAT {
-- A connect is called on a port (creating the channels)
-- A disconnect is called on the same port (the broker is listening again)
-} UNTIL 500000 times
-```
-
-#### Scenario 4 (FINAL):
-
-```
-- A accept is called on a port (the broker is listening)
-REPEAT {
-- A connect is called on a port (creating the channels)
-- A disconnect is called on the same port (the broker is listening again)
-} UNTIL 1M times
-```
-
-The broker handled all scenarios successfully, giving this these execution times:
-
-- Scenario 1: 0.077 seconds
-- Scenario 2: 0.7 seconds (10x load , 10x time)
-- Scenario 3: 10.943 seconds (5x load, ~15x time)
-- Scenario 4: 44 seconds (2x load, ~4x time)
 
 This looks like an exponential growth.
 

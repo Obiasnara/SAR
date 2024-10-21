@@ -19,7 +19,6 @@ public class Broker extends BrokerAbstract {
 	public interface ConnectListener {
 		void refused();
 		void connected(ChannelAbstract queue);
-		void disconnected();
 	}
 	private String name;
 	protected static final int BUFFER_SIZE = 10;
@@ -42,7 +41,6 @@ public class Broker extends BrokerAbstract {
 
 		public Request(int port, AcceptListener l) {
 			this.port = port; this.al = l;
-			Task.task().post(this);
 		}
 		public Request(int port, String name, ConnectListener l) {
 			this.port = port; this.name = name; this.cl = l; this.connectionTries = 0;
@@ -71,8 +69,8 @@ public class Broker extends BrokerAbstract {
 			
 			
 			// Then we handle ourselves
-			this.cb_in = new CircularBuffer(BUFFER_SIZE);
-			this.cb_out = new CircularBuffer(BUFFER_SIZE);
+			this.cb_in = connect_cb_out;
+			this.cb_out = connect_cb_in;
 			
 			disconnect_monitoring = new AtomicBoolean(false);
 			
@@ -90,9 +88,6 @@ public class Broker extends BrokerAbstract {
 
 	@Override
 	public boolean accept(int port, AcceptListener acl) {
-		// Already accepting on the port
-		if(this.acceptEvents.containsKey(port)) return false;
-		
 		acceptEvents.put(port, new Request(port, acl));
 		return true;
 	}
@@ -111,6 +106,11 @@ public class Broker extends BrokerAbstract {
 			return b.connect(port, name, cnl); 
 		}
 		
+		Request accept_request = acceptEvents.get(port);
+		// If no accepts then we refuse the connection
+		if(accept_request == null) return false;
+		
+		// Add the connect to the list
 		ArrayList<Request> listOfRequests = this.connectEvents.get(port);
 		if(listOfRequests == null) {
 			listOfRequests = new ArrayList<Request>();
@@ -118,34 +118,11 @@ public class Broker extends BrokerAbstract {
 		listOfRequests.add(new Request(port, name, cnl));
 		this.connectEvents.put(port, listOfRequests);
 		
-		return true;
-	}
-	
-	public boolean disconnect(int port, String name, ConnectListener cnl) {
-		
-		// Dispatch to the right broker
-		if(this.name != name) {
-			BrokerAbstract b = BrokerManager.getInstance().getBroker(name);
-			// Signal to the user the action cannot be performed 
-			if (b == null) {
-				return false;  
-			}
-			
-			return b.disconnect(port, name, cnl); 
-		}
-		
-		// Check if we have an actual accept
-		Request accept_request = acceptEvents.get(port);
-		if (accept_request == null) return false;
-		
-		// Send disconnected event
-		Task.task().post(() -> cnl.disconnected(), "Disconnect Event");
-		// Restart the connection seek process on that specific port
+		// Start the accept phase 
 		Task.task().post(accept_request, "Accepting Process on port " + accept_request.port);
 		
 		return true;
-		
-		
 	}
+	
 
 }
